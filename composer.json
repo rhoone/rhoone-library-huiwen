@@ -1,0 +1,29 @@
+{
+    "name": "rhoone/rhoone-library-huiwen",
+    "description": "Huiwen Library Software for rho one.",
+    "type": "yii2-extension",
+    "keywords": ["yii2","extension","rho","one","search","library", "huiwen"],
+    "license": "AGPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "rhoone",
+            "email": "opensource@dev.rho.one"
+        }
+    ],
+    "require": {
+        "rhoone/yii2-rhoone": "dev-master",
+        "rhoone/rhoone-spider": "dev-master",
+        "rhoone/rhoone-library": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "rhoone\\library\\provider\\huiwen\\": ""
+        }
+    },
+    "repositories":[
+        {
+            "type": "git",
+            "url": "https://github.com/rhoone/rhoone-library-huiwen"
+        }
+    ]
+}
