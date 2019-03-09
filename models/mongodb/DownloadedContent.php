@@ -107,6 +107,7 @@ class DownloadedContent extends BaseMongoEntityModel implements IDestinationMode
      */
     public function setDownloadedContent(string $content)
     {
-        $this->html = $content;
+        $charset = mb_detect_encoding($content);
+        $this->html = iconv($charset, 'UTF-8//IGNORE', $content);
     }
 }
