@@ -12,7 +12,7 @@
 
 namespace rhoone\library\providers\huiwen\models\mongodb;
 
-use rhoone\spider\destinations\IDestinationModel;
+use rhoone\spider\destinations\IDownloadedContent;
 use rhosocial\base\models\models\BaseMongoEntityModel;
 use Yii;
 use yii\base\NotSupportedException;
@@ -31,7 +31,7 @@ use yii\base\NotSupportedException;
  * @property int $version
  * @property string $downloadedContent
  */
-class DownloadedContent extends BaseMongoEntityModel implements IDestinationModel
+class DownloadedContent extends BaseMongoEntityModel implements IDownloadedContent
 {
     public $enableIP = 0;
 
