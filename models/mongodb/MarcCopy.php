@@ -15,10 +15,10 @@ namespace rhoone\library\providers\huiwen\models\mongodb;
 use rhosocial\base\models\models\BaseMongoEntityModel;
 
 /**
- * Class MarcNo
+ * Class MarcCopy
  * @package rhoone\library\providers\huiwen\models\mongodb
  */
-class MarcNo extends BaseMongoEntityModel
+class MarcCopy extends BaseMongoEntityModel
 {
     public $enableIP = 0;
 
@@ -37,8 +37,7 @@ class MarcNo extends BaseMongoEntityModel
     {
         $parent = parent::attributes();
         return array_merge($parent, [
-            'marc_no', 'empty', 'error_downloading', 'reason_downloading', 'error_analyzing', 'reason_analyzing',
-            'error_indexing', 'reason_indexing', 'version'
+            'marc_no', 'call_no', 'barcode', 'volume_period', 'position', 'status', 'version'
         ]);
     }
 
@@ -58,12 +57,10 @@ class MarcNo extends BaseMongoEntityModel
     {
         $parent = parent::rules();
         return array_merge($parent,[
-            [['marc_no', 'empty', 'error_downloading', 'error_analyzing', 'error_indexing'], 'required'],
-            [['marc_no', 'reason_downloading', 'reason_analyzing', 'reason_indexing'], 'string'],
-            [['empty', 'error_downloading', 'error_analyzing', 'error_indexing'], 'default', 'value' => false],
-            [['empty', 'error_downloading', 'error_analyzing', 'error_indexing'], 'boolean', 'trueValue' => true, 'falseValue' => false],
-            [['version', 'last_downloaded_content_version'], 'integer', 'min' => 0],
-            [['version', 'last_downloaded_content_version'], 'default', 'value' => 0],
+            [['marc_no', 'call_no', 'barcode', 'position', 'status'], 'required'],
+            [['marc_no', 'call_no', 'barcode', 'volume_period', 'position', 'status'], 'string'],
+            ['version', 'integer', 'min' => 0],
+            ['version', 'default', 'value' => 0],
         ]);
     }
 
@@ -76,14 +73,11 @@ class MarcNo extends BaseMongoEntityModel
             '_id' => Yii::t('app', 'ID'),
             'guid' => Yii::t('app', 'Guid'),
             'marc_no' => Yii::t('app', 'Marc No'),
-            'empty' => Yii::t('app', 'Empty'),
-            'error_downloading' => Yii::t('app', 'Error Downloading'),
-            'reason_downloading' => Yii::t('app', 'Reason Downloading'),
-            'error_analyzing' => Yii::t('app', 'Error Analyzing'),
-            'reason_downloading' => Yii::t('app', 'Reason Analyzing'),
-            'error_indexing' => Yii::t('app', 'Error Indexing'),
-            'reason_indexing' => Yii::t('app', 'Reason Indexing'),
-            'last_downloaded_content_version' => Yii::t('app', 'Last Downloaded Content Version'),
+            'call_no' => Yii::t('app', 'Call No'),
+            'barcode' => Yii::t('app', 'Barcode'),
+            'volume_period' => Yii::t('app', 'Volume Period'),
+            'position' => Yii::t('app', 'Position'),
+            'status' => Yii::t('app', 'Status'),
             'created_at' => Yii::t('app', 'Created At'),
             'updated_at' => Yii::t('app', 'Updated At'),
             'version' => Yii::t('app', 'Version'),
