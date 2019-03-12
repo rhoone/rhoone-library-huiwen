@@ -13,6 +13,7 @@
 namespace rhoone\library\providers\huiwen\job;
 
 use rhoone\library\providers\huiwen\models\mongodb\MarcCopy;
+use rhoone\library\providers\huiwen\models\mongodb\MarcInfo;
 use simplehtmldom_1_5\simple_html_dom;
 use simplehtmldom_1_5\simple_html_dom_node;
 use Sunra\PhpSimple\HtmlDomParser;
@@ -42,4 +43,9 @@ class BatchAnalyzeToMongoDBJob extends baseJob
      * @var string
      */
     public $marcCopyClass = MarcCopy::class;
+
+    /**
+     * @var string
+     */
+    public $marcInfoClass = MarcInfo::class;
 }
