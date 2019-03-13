@@ -123,4 +123,29 @@ class MarcCopy extends BaseMongoEntityModel
     {
         return $this->hasOne($this->marcNoClass, ['marc_no' => 'marc_no'])->inverseOf('marcCopies');
     }
+
+    /**
+     * @param string $marc_no
+     * @param string $barcode
+     * @param string $call_no
+     * @param string $volume_period
+     * @param string $position
+     * @param string $status
+     * @return MarcCopy
+     */
+    public static function getOneOrCreate(string $marc_no, string $barcode, string $call_no, string $volume_period = '', string $position = '', string $status = '')
+    {
+        $book = static::find()->where(['marc_no' => $marc_no, 'barcode' => $barcode])->one();
+
+        // If not found, create an instance.
+        if (!$book) {
+            $book = new static(['marc_no' => $marc_no, 'barcode' => $barcode]);
+        }
+
+        $book->call_no = $call_no;
+        $book->volume_period = $volume_period;
+        $book->position = $position;
+        $book->status = $status;
+        return $book;
+    }
 }

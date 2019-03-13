@@ -13,6 +13,7 @@
 namespace rhoone\library\providers\huiwen\job;
 
 use rhoone\library\providers\huiwen\models\mongodb\MarcCopy;
+use rhoone\library\providers\huiwen\models\mongodb\MarcStatus;
 use rhoone\library\providers\huiwen\targets\tongjiuniversity\models\mongodb\DownloadedContent;
 use simplehtmldom_1_5\simple_html_dom_node;
 use Sunra\PhpSimple\HtmlDomParser;
@@ -180,57 +181,23 @@ trait AnalyzeJobTrait
      */
     public function analyzeBookCopy($dom)
     {
-        $items = [];
+        $booksAttributes = [];
         foreach ($dom as $book) {
             $book = HtmlDomParser::str_get_html($this->removeTag($book, "span"));
             $item = $book->find('td');
             if (count($item) < 5) {
                 continue;
             }
-            $call_no = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[0]->text())));
-            $barcode = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[1]->text())));
-            $volume_period = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[2]->text())));
-            $position = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[3]->text())));
-            $status = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[4]->text())));
-
-            $marcCopyClass = $this->marcCopyClass;
-            try {
-                $item = $marcCopyClass::find()->where(['marc_no' => $this->_currentMarcNo, 'barcode' => $barcode])->one();
-            } catch (\Exception $ex) {
-                file_put_contents("php://stderr", $ex->getMessage());
-                if ($skipError) continue;
-                else throw $ex;
-            }
-            if (!$item) {
-                $item = new $marcCopyClass(['marc_no' => $this->_currentMarcNo, 'barcode' => $barcode]);
-            }
-            $item->call_no = $call_no;print_r($item->call_no . " | ");print_r($item->barcode . " | ");
-            $item->volume_period = $volume_period;print_r($item->volume_period . " | ");
-            $item->position = $position;print_r($item->position . " | ");
-            $item->status = $status;print_r($item->status);
-            $items[] = $item;print_r("\n");
+            $bookAttribute = [];
+            $bookAttribute['marc_no'] = $this->_currentMarcNo;
+            $bookAttribute['call_no'] = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[0]->text())));
+            $bookAttribute['barcode'] = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[1]->text())));
+            $bookAttribute['volume_period'] = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[2]->text())));
+            $bookAttribute['position'] = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[3]->text())));
+            $bookAttribute['status'] = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[4]->text())));
+            $booksAttributes[$bookAttribute['barcode']] = $bookAttribute;
         }
-        return $items;
-    }
-
-    /**
-     * @param array $attributes
-     */
-    public function populateBookCopy(array $attributes, bool $skipError)
-    {
-        $marcCopyClass = $this->marcCopyClass;
-        try {
-            $book = $marcCopyClass::find()->where(['marc_no' => $attributes['marc_no'], $barcode = $attributes['barcode']])->one();
-        } catch (\Exception $ex) {
-            file_put_contents("php://stderr", $ex->getMessage());
-            if (!$skipError) throw $ex;
-        }
-
-        if (!$book) {
-            $book = new $marcCopyClass(['marc_no' => $attributes['marc_no'], $barcode => $attributes['barcode']]);
-        }
-        /* @var $book MarcCopy */
-
+        return $booksAttributes;
     }
 
     /**
@@ -241,7 +208,7 @@ trait AnalyzeJobTrait
         if (empty($dom)) {
             return [];
         }
-        return $dom[0];
+        return $dom[0]->innertext();
     }
 
     /**
@@ -261,18 +228,25 @@ trait AnalyzeJobTrait
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
         try {
-            $bookCopies = $this->analyzeBookCopy($dom->find($this->bookSelector));
-            foreach ($bookCopies as $key => $book)
+            $booksAttributes = $this->analyzeBookCopy($dom->find($this->bookSelector));
+            $marcCopyClass = $this->marcCopyClass;var_dump(count($booksAttributes));
+            foreach ($booksAttributes as $marc_no => $attributes)
             {
-                
+                $book = $marcCopyClass::getOneOrCreate($attributes['marc_no'], $attributes['barcode'], $attributes['call_no'], $attributes['volume_period'], $attributes['position'], $attributes['status']);
+                /* @var $book MarcCopy */
+                /**
+                if (!$book->save()) {
+                    file_put_contents("php://stderr", print_r($book->getErrorSummary()));
+                }*/
             }
         } catch (\Exception $ex) {
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
         try {
-            $status = $this->analyzeStatus($dom->find($this->statusSelector));
-
-            //print_r($status . "\n");
+            $statusInnerText = $this->analyzeStatus($dom->find($this->statusSelector));
+            $marcStatusClass = $this->marcStatusClass;
+            $marcStatus = $marcStatusClass::getOneOrCreate($this->_currentMarcNo, $statusInnerText);
+            /* @var $marcStatus MarcStatus */
         } catch (\Exception $ex) {
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }

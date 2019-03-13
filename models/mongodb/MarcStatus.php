@@ -23,6 +23,7 @@ use rhosocial\base\models\models\BaseMongoEntityModel;
  * @property int $page_visit
  * @property int $version
  * @property-read MarcNo $marcNo
+ * @property-write string $marcStatus
  * @package rhoone\library\providers\huiwen\models\mongodb
  */
 class MarcStatus extends BaseMongoEntityModel
@@ -39,7 +40,7 @@ class MarcStatus extends BaseMongoEntityModel
      */
     public function init()
     {
-        $this->queryClass = StatusQuery::class;
+        $this->queryClass = MarcStatusQuery::class;
         parent::init();
     }
 
@@ -82,6 +83,9 @@ class MarcStatus extends BaseMongoEntityModel
         ];
     }
 
+    /**
+     * @param $marc_status
+     */
     public function setMarcStatus($marc_status)
     {
         $marc_status = trim(str_replace("<span></span>", "", $marc_status));
@@ -101,6 +105,9 @@ class MarcStatus extends BaseMongoEntityModel
         }
     }
 
+    /**
+     * @var string
+     */
     public $statusRegex = "~MARC状态：[\x{4e00}-\x{9fa5}]+~u";
 
     /**
@@ -117,6 +124,9 @@ class MarcStatus extends BaseMongoEntityModel
         return false;
     }
 
+    /**
+     * @var string
+     */
     public $typeRegex = "~文献类型：[\x{4e00}-\x{9fa5}]+~u";
 
     /**
@@ -133,6 +143,9 @@ class MarcStatus extends BaseMongoEntityModel
         return false;
     }
 
+    /**
+     * @var string
+     */
     public $pageVisitRegex = "~浏览次数：\d*~u";
 
     /**
@@ -155,5 +168,21 @@ class MarcStatus extends BaseMongoEntityModel
     public function getMarcNo()
     {
         return $this->hasOne($marcNoClass, ['marc_no' => 'marc_no'])->inverseOf('marcStatus');
+    }
+
+    /**
+     * @param string $marc_no
+     * @param string $innertext
+     * @return static
+     */
+    public static function getOneOrCreate(string $marc_no, string $innertext)
+    {
+        $status = static::find()->where(['marc_no' => $marc_no])->one();
+        if (!$status) {
+            $status = new static(['marc_no' => $marc_no]);
+        }
+        /* @var $status static */
+        $status->marcStatus = $innertext;
+        return $status;
     }
 }
