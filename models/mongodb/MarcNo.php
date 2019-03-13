@@ -13,6 +13,7 @@
 namespace rhoone\library\providers\huiwen\models\mongodb;
 
 use rhosocial\base\models\models\BaseMongoEntityModel;
+use Yii;
 
 /**
  * This class is used to save the state of the MARC pipeline.
@@ -25,6 +26,7 @@ use rhosocial\base\models\models\BaseMongoEntityModel;
  * @property string $reason_analyzing
  * @property bool $error_indexing
  * @property string $reason_indexing
+ * @property int $last_downloaded_content_version
  * @property int $version
  * @property-read DownloadedContent $downloadedContent
  * @property-read MarcInfo[] $marcInfos
@@ -35,6 +37,26 @@ use rhosocial\base\models\models\BaseMongoEntityModel;
 class MarcNo extends BaseMongoEntityModel
 {
     public $enableIP = 0;
+
+    /**
+     * @var string
+     */
+    public $marcStatusClass = MarcStatus::class;
+
+    /**
+     * @var string
+     */
+    public $marcInfoClass = MarcInfo::class;
+
+    /**
+     * @var string
+     */
+    public $marcCopyClass = MarcCopy::class;
+
+    /**
+     * @var string
+     */
+    public $downloadedContentClass = DownloadedContent::class;
 
     /**
      * {@inheritdoc}
@@ -52,7 +74,7 @@ class MarcNo extends BaseMongoEntityModel
         $parent = parent::attributes();
         return array_merge($parent, [
             'marc_no', 'empty', 'error_downloading', 'reason_downloading', 'error_analyzing', 'reason_analyzing',
-            'error_indexing', 'reason_indexing', 'version'
+            'error_indexing', 'reason_indexing', 'last_downloaded_content_version', 'version'
         ]);
     }
 
@@ -72,10 +94,11 @@ class MarcNo extends BaseMongoEntityModel
     {
         $parent = parent::rules();
         return array_merge($parent,[
-            [['marc_no', 'empty', 'error_downloading', 'error_analyzing', 'error_indexing'], 'required'],
+            [['marc_no'], 'required'],
             [['marc_no', 'reason_downloading', 'reason_analyzing', 'reason_indexing'], 'string'],
             [['empty', 'error_downloading', 'error_analyzing', 'error_indexing'], 'default', 'value' => false],
             [['empty', 'error_downloading', 'error_analyzing', 'error_indexing'], 'boolean', 'trueValue' => true, 'falseValue' => false],
+            [['reason_downloading', 'reason_analyzing', 'reason_indexing'], 'default', 'value' => ''],
             [['version', 'last_downloaded_content_version'], 'integer', 'min' => 0],
             [['version', 'last_downloaded_content_version'], 'default', 'value' => 0],
         ]);
@@ -126,7 +149,7 @@ class MarcNo extends BaseMongoEntityModel
      */
     public function getDownloadedContent()
     {
-        return $this->hasOne(DownloadedContent::class, ['marc_no' => 'marc_no'])->inverseOf('marcNo');
+        return $this->hasOne($this->downloadedContentClass, ['marc_no' => 'marc_no'])->inverseOf('marcNo');
     }
 
     /**
@@ -134,7 +157,7 @@ class MarcNo extends BaseMongoEntityModel
      */
     public function getMarcInfos()
     {
-        return $this->hasMany(MarcInfo::class, ['marc_no' => 'marc_no']);
+        return $this->hasMany($this->marcInfoClass, ['marc_no' => 'marc_no']);
     }
 
     /**
@@ -142,7 +165,7 @@ class MarcNo extends BaseMongoEntityModel
      */
     public function getMarcCopies()
     {
-        return $this->hasMany(MarcCopy::class, ['marc_no' => 'marc_no']);
+        return $this->hasMany($this->marcCopyClass, ['marc_no' => 'marc_no']);
     }
 
     /**
@@ -150,6 +173,27 @@ class MarcNo extends BaseMongoEntityModel
      */
     public function getMarcStatus()
     {
-        return $this->hasOne(MarcStatus::class, ['marc_no' => 'marc_no']);
+        return $this->hasOne($this->marcStatusClass, ['marc_no' => 'marc_no']);
+    }
+
+    /**
+     * @param string $marc_on
+     * @return MarcNo
+     */
+    public static function getOneOrCreate(string $marc_no)
+    {
+        $marcNo = static::find()->marcNo($marc_no)->one();
+        if (!$marcNo) {
+            $marcNo = new static(['marc_no' => $marc_no]);
+        }
+        return $marcNo;
+    }
+
+    /**
+     * @return MarcNoQuery
+     */
+    public static function find()
+    {
+        return parent::find();
     }
 }

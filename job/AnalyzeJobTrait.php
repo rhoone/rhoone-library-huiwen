@@ -13,6 +13,8 @@
 namespace rhoone\library\providers\huiwen\job;
 
 use rhoone\library\providers\huiwen\models\mongodb\MarcCopy;
+use rhoone\library\providers\huiwen\models\mongodb\MarcInfo;
+use rhoone\library\providers\huiwen\models\mongodb\MarcNo;
 use rhoone\library\providers\huiwen\models\mongodb\MarcStatus;
 use rhoone\library\providers\huiwen\targets\tongjiuniversity\models\mongodb\DownloadedContent;
 use simplehtmldom_1_5\simple_html_dom_node;
@@ -119,7 +121,7 @@ trait AnalyzeJobTrait
             }
             $value = $result[0];
             $results[$key] = $value;
-            print_r($key . $value . "\n");
+            //print_r($key . $value . "\n");
         }
         return $results;
     }
@@ -211,9 +213,7 @@ trait AnalyzeJobTrait
         return $dom[0]->innertext();
     }
 
-    /**
-     * @param string $html
-     */
+
     public function analyze(string $html)
     {
         try {
@@ -221,36 +221,80 @@ trait AnalyzeJobTrait
         } catch (\Exception $ex) {
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
+        $marcNoClass = $this->marcNoClass;
+        $marcNo = $marcNoClass::getOneOrCreate($this->_currentMarcNo);
+        /* @var $marcNo MarcNo */
+        $downloadedContent = $marcNo->downloadedContent;
+        if ($downloadedContent) {
+            $marcNo->last_downloaded_content_version = $downloadedContent->version;
+        }
+        //var_dump($marcNo->attributes);
+        if (!$marcNo->save()) {
+            file_put_contents("php://stderr", print_r($marcNo->getErrorSummary()));
+        }
         try {
-            $marc = $this->analyzeMarc($dom->find($this->marcSelector));
-            //var_dump($this->isEmptyMarc($marc));
+            $marcResults = $this->analyzeMarc($dom->find($this->marcSelector));
         } catch (\Exception $ex) {
+            $marcNo->error_analyzing = true;
+            $marcNo->reason_analyzing = $ex->getMessage();
+            return $marcNo->save();
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
+
+        if ($this->isEmptyMarc($marcResults)) {
+            $marcNo->empty = true;
+            return $marcNo->save();
+        }
+        $marcInfoClass = $this->marcInfoClass;
+        foreach ($marcResults as $key => $value)
+        {
+            $marcInfo = $marcInfoClass::getOneOrCreate($this->_currentMarcNo, $key, $value);
+            /* @var $marcInfo MarcInfo */
+            if (!$marcInfo->save()) {
+                file_put_contents("php://stderr", print_r($marcInfo->getErrorSummary()));
+            }
+        }
+        //var_dump($this->isEmptyMarc($marcResults));
+
         try {
             $booksAttributes = $this->analyzeBookCopy($dom->find($this->bookSelector));
-            $marcCopyClass = $this->marcCopyClass;var_dump(count($booksAttributes));
-            foreach ($booksAttributes as $marc_no => $attributes)
-            {
-                $book = $marcCopyClass::getOneOrCreate($attributes['marc_no'], $attributes['barcode'], $attributes['call_no'], $attributes['volume_period'], $attributes['position'], $attributes['status']);
-                /* @var $book MarcCopy */
-                /**
-                if (!$book->save()) {
-                    file_put_contents("php://stderr", print_r($book->getErrorSummary()));
-                }*/
-            }
         } catch (\Exception $ex) {
+            $marcNo->error_analyzing = true;
+            $marcNo->reason_analyzing = $ex->getMessage();
+            return $marcNo->save();
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
+
+        $marcCopyClass = $this->marcCopyClass;
+        foreach ($booksAttributes as $marc_no => $attributes)
+        {
+            $book = $marcCopyClass::getOneOrCreate($attributes['marc_no'], $attributes['barcode'], $attributes['call_no'], $attributes['volume_period'], $attributes['position'], $attributes['status']);
+            /* @var $book MarcCopy */
+            if (!$book->save()) {
+                file_put_contents("php://stderr", print_r($book->getErrorSummary()));
+            }
+        }
+
         try {
             $statusInnerText = $this->analyzeStatus($dom->find($this->statusSelector));
-            $marcStatusClass = $this->marcStatusClass;
-            $marcStatus = $marcStatusClass::getOneOrCreate($this->_currentMarcNo, $statusInnerText);
-            /* @var $marcStatus MarcStatus */
         } catch (\Exception $ex) {
+            $marcNo->error_analyzing = true;
+            $marcNo->reason_analyzing = $ex->getMessage();
+            return $marcNo->save();
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
-        return $marc;
+
+        $marcStatusClass = $this->marcStatusClass;
+        $marcStatus = $marcStatusClass::getOneOrCreate($this->_currentMarcNo, $statusInnerText);
+        /* @var $marcStatus MarcStatus */
+        if (!$marcStatus->save()) {
+            $marcNo->error_analyzing = true;
+            $marcNo->reason_analyzing = $ex->getMessage();
+            return $marcNo->save();
+            file_put_contents("php://stderr", print_r($marcStatus->getErrorSummary()));
+        }
+
+        return $marcNo->save();
     }
 
     /**
@@ -280,6 +324,7 @@ trait AnalyzeJobTrait
             $count++;
             printf("progress: [%-50s] %d%% Done.\r", str_repeat('#', $count / count($this->marcNos) * 50), $count / count($this->marcNos) * 100);
         }
+        file_put_contents("php://stdout", "\n");
         file_put_contents("php://stdout", count($this->marcNos) . " tasks finished.\n");
         return 0;
     }

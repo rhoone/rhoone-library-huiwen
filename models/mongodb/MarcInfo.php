@@ -116,4 +116,20 @@ class MarcInfo extends BaseMongoEntityModel
     {
         return $this->hasOne($this->marcNoClass, ['marc_no' => 'marc_no'])->inverseOf('marcInfos');
     }
+
+    /**
+     * @param string $marc_no
+     * @param string $key
+     * @param $value
+     * @return MarcInfo
+     */
+    public static function getOneOrCreate(string $marc_no, string $key, $value)
+    {
+        $marcInfo = static::find()->where(['marc_no' => $marc_no, 'key' => $key])->one();
+        if (!$marcInfo) {
+            $marcInfo = new static(['marc_no' => $marc_no, 'key' => $key]);
+        }
+        $marcInfo->value = $value;
+        return $marcInfo;
+    }
 }

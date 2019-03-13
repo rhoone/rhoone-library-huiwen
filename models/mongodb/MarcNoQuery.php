@@ -20,5 +20,5 @@ use rhosocial\base\models\queries\BaseMongoEntityQuery;
  */
 class MarcNoQuery extends BaseMongoEntityQuery
 {
-
+    use MarcNoQueryTrait;
 }

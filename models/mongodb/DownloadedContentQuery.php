@@ -20,5 +20,5 @@ use rhosocial\base\models\queries\BaseMongoEntityQuery;
  */
 class DownloadedContentQuery extends BaseMongoEntityQuery
 {
-
+    use MarcNoQueryTrait;
 }

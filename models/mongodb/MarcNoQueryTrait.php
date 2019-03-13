@@ -12,13 +12,18 @@
 
 namespace rhoone\library\providers\huiwen\models\mongodb;
 
-use rhosocial\base\models\queries\BaseMongoEntityQuery;
-
 /**
- * Class MarcStatusQuery
+ * Trait MarcNoQueryTrait
  * @package rhoone\library\providers\huiwen\models\mongodb
  */
-class MarcStatusQuery extends BaseMongoEntityQuery
+trait MarcNoQueryTrait
 {
-    use MarcNoQueryTrait;
+    /**
+     * @param string $marcNo
+     * @return static
+     */
+    public function marcNo(string $marcNo)
+    {
+        return $this->andWhere(['marc_no' => $marcNo]);
+    }
 }

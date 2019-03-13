@@ -131,4 +131,12 @@ class DownloadedContent extends BaseMongoEntityModel implements IDownloadedConte
     {
         return $this->hasOne(MarcNo::class, ['marc_no' => 'marc_no']);
     }
+
+    /**
+     * @return DownloadedContentQuery
+     */
+    public static function find()
+    {
+        return parent::find();
+    }
 }

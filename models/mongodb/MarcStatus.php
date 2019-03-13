@@ -101,7 +101,7 @@ class MarcStatus extends BaseMongoEntityModel
         $pageVisit = $this->extractPageVisit($marc_status);
         if ($pageVisit !== false)
         {
-            $this->page_visit = $pageVisit;
+            $this->page_visit = intval($pageVisit);
         }
     }
 
@@ -167,7 +167,7 @@ class MarcStatus extends BaseMongoEntityModel
      */
     public function getMarcNo()
     {
-        return $this->hasOne($marcNoClass, ['marc_no' => 'marc_no'])->inverseOf('marcStatus');
+        return $this->hasOne($this->marcNoClass, ['marc_no' => 'marc_no'])->inverseOf('marcStatus');
     }
 
     /**
