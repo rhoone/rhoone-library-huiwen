@@ -17,6 +17,11 @@ use rhosocial\base\models\models\BaseMongoEntityModel;
 /**
  * Class MarcStatus
  *
+ * @property string $marc_no
+ * @property string $status
+ * @property string $type
+ * @property int $page_visit
+ * @property int $version
  * @property-read MarcNo $marcNo
  * @package rhoone\library\providers\huiwen\models\mongodb
  */
@@ -24,6 +29,14 @@ class MarcStatus extends BaseMongoEntityModel
 {
     public $enableIP = 0;
 
+    /**
+     * @var string
+     */
+    public $marcNoClass = MarcNo::class;
+
+    /**
+     * {@inheritdoc}
+     */
     public function init()
     {
         $this->queryClass = StatusQuery::class;
@@ -38,7 +51,20 @@ class MarcStatus extends BaseMongoEntityModel
         return array_merge(parent::rules(), [
             [['page_visit'], 'integer', 'min' => 0],
             [['status', 'type'], 'string', 'max' => 255],
-            [['marc_no'], 'exist', 'skipOnError' => true, 'targetClass' => Marc::class, 'targetAttribute' => ['marc_no' => 'marc_no']],
+            [['marc_no'], 'exist', 'skipOnError' => true, 'targetClass' => $this->marcNoClass, 'targetAttribute' => ['marc_no' => 'marc_no']],
+        ]);
+    }
+
+    /**
+     * {@inheritdoc}
+     * @return array
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function attributes()
+    {
+        $parent = parent::attributes();
+        return array_merge($parent, [
+            'marc_no', 'status', 'type', 'page_visit',
         ]);
     }
 
@@ -128,6 +154,6 @@ class MarcStatus extends BaseMongoEntityModel
      */
     public function getMarcNo()
     {
-        return $this->hasOne(MarcNo::class, ['marc_no' => 'marc_no'])->inverseOf('marcStatus');
+        return $this->hasOne($marcNoClass, ['marc_no' => 'marc_no'])->inverseOf('marcStatus');
     }
 }

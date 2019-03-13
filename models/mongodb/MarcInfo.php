@@ -17,12 +17,20 @@ use rhosocial\base\models\models\BaseMongoEntityModel;
 /**
  * Class MarcInfo
  *
+ * @property string $key
+ * @property string $value
+ * @property int $version
  * @property-read marcNo $marcNo
  * @package rhoone\library\providers\huiwen\models\mongodb
  */
 class MarcInfo extends BaseMongoEntityModel
 {
     public $enableIP = 0;
+
+    /**
+     * @var string
+     */
+    public $marcNoClass = MarcNo::class;
 
     /**
      * {@inheritdoc}
@@ -63,6 +71,7 @@ class MarcInfo extends BaseMongoEntityModel
             [['marc_no', 'key', 'value'], 'string'],
             ['version', 'integer', 'min' => 0],
             ['version', 'default', 'value' => 0],
+            [['marc_no'], 'exist', 'skipOnError' => true, 'targetClass' => $this->marcNoClass, 'targetAttribute' => ['marc_no' => 'marc_no']],
         ]);
     }
 
@@ -105,6 +114,6 @@ class MarcInfo extends BaseMongoEntityModel
      */
     public function getMarcNo()
     {
-        return $this->hasOne(MarcNo::class, ['marc_no' => 'marc_no'])->inverseOf('marcInfos');
+        return $this->hasOne($this->marcNoClass, ['marc_no' => 'marc_no'])->inverseOf('marcInfos');
     }
 }

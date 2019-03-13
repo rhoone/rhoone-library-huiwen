@@ -12,6 +12,7 @@
 
 namespace rhoone\library\providers\huiwen\job;
 
+use rhoone\library\providers\huiwen\models\mongodb\MarcCopy;
 use rhoone\library\providers\huiwen\targets\tongjiuniversity\models\mongodb\DownloadedContent;
 use simplehtmldom_1_5\simple_html_dom_node;
 use Sunra\PhpSimple\HtmlDomParser;
@@ -203,13 +204,33 @@ trait AnalyzeJobTrait
             if (!$item) {
                 $item = new $marcCopyClass(['marc_no' => $this->_currentMarcNo, 'barcode' => $barcode]);
             }
-            $item->call_no = $call_no;//print_r($item->call_no . " | ");print_r($item->barcode . " | ");
-            $item->volume_period = $volume_period;//print_r($item->volume_period . " | ");
-            $item->position = $position;//print_r($item->position . " | ");
-            $item->status = $status;//print_r($item->status);
-            $items[] = $item;//print_r("\n");
+            $item->call_no = $call_no;print_r($item->call_no . " | ");print_r($item->barcode . " | ");
+            $item->volume_period = $volume_period;print_r($item->volume_period . " | ");
+            $item->position = $position;print_r($item->position . " | ");
+            $item->status = $status;print_r($item->status);
+            $items[] = $item;print_r("\n");
         }
         return $items;
+    }
+
+    /**
+     * @param array $attributes
+     */
+    public function populateBookCopy(array $attributes, bool $skipError)
+    {
+        $marcCopyClass = $this->marcCopyClass;
+        try {
+            $book = $marcCopyClass::find()->where(['marc_no' => $attributes['marc_no'], $barcode = $attributes['barcode']])->one();
+        } catch (\Exception $ex) {
+            file_put_contents("php://stderr", $ex->getMessage());
+            if (!$skipError) throw $ex;
+        }
+
+        if (!$book) {
+            $book = new $marcCopyClass(['marc_no' => $attributes['marc_no'], $barcode => $attributes['barcode']]);
+        }
+        /* @var $book MarcCopy */
+
     }
 
     /**
@@ -241,11 +262,16 @@ trait AnalyzeJobTrait
         }
         try {
             $bookCopies = $this->analyzeBookCopy($dom->find($this->bookSelector));
+            foreach ($bookCopies as $key => $book)
+            {
+                
+            }
         } catch (\Exception $ex) {
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
         try {
             $status = $this->analyzeStatus($dom->find($this->statusSelector));
+
             //print_r($status . "\n");
         } catch (\Exception $ex) {
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");

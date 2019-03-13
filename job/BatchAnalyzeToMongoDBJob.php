@@ -48,4 +48,9 @@ class BatchAnalyzeToMongoDBJob extends baseJob
      * @var string
      */
     public $marcInfoClass = MarcInfo::class;
+
+    /**
+     * @var string
+     */
+    public $marcStatusClass = MarcStatus::class;
 }

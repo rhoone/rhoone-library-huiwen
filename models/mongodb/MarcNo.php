@@ -17,6 +17,15 @@ use rhosocial\base\models\models\BaseMongoEntityModel;
 /**
  * This class is used to save the state of the MARC pipeline.
  *
+ * @property string $marc_no
+ * @property bool $empty
+ * @property bool $error_downloading
+ * @property string $reason_downloading
+ * @property bool $error_analyzing
+ * @property string $reason_analyzing
+ * @property bool $error_indexing
+ * @property string $reason_indexing
+ * @property int $version
  * @property-read DownloadedContent $downloadedContent
  * @property-read MarcInfo[] $marcInfos
  * @property-read MarcCopy[] $marcCopies

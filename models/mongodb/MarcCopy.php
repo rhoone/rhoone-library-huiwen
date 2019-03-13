@@ -17,12 +17,24 @@ use rhosocial\base\models\models\BaseMongoEntityModel;
 /**
  * Class MarcCopy
  *
+ * @property string $marc_no
+ * @property string $call_no
+ * @property string $barcode
+ * @property string $volume_period
+ * @property string $position
+ * @property string $status
+ * @property int $version
  * @property-read MarcNo $marcNo
  * @package rhoone\library\providers\huiwen\models\mongodb
  */
 class MarcCopy extends BaseMongoEntityModel
 {
     public $enableIP = 0;
+
+    /**
+     * @var string
+     */
+    public $marcNoClass = MarcNo::class;
 
     /**
      * {@inheritdoc}
@@ -63,6 +75,7 @@ class MarcCopy extends BaseMongoEntityModel
             [['marc_no', 'call_no', 'barcode', 'volume_period', 'position', 'status'], 'string'],
             ['version', 'integer', 'min' => 0],
             ['version', 'default', 'value' => 0],
+            [['marc_no'], 'exist', 'skipOnError' => true, 'targetClass' => $this->marcNoClass, 'targetAttribute' => ['marc_no' => 'marc_no']],
         ]);
     }
 
@@ -108,6 +121,6 @@ class MarcCopy extends BaseMongoEntityModel
      */
     public function getMarcNo()
     {
-        return $this->hasOne(MarcNo::class, ['marc_no' => 'marc_no'])->inverseOf('marcCopies');
+        return $this->hasOne($this->marcNoClass, ['marc_no' => 'marc_no'])->inverseOf('marcCopies');
     }
 }
