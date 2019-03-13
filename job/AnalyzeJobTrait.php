@@ -96,20 +96,30 @@ trait AnalyzeJobTrait
         return $result;
     }
 
+    public $exceptMarcInfoList = ['豆瓣简介'];
+
     /**
      * @param simple_html_dom_node[]|simple_html_dom_node|null $dom
+     * @return string[]
      */
     public function analyzeMarc($dom)
     {
+        $results = [];
         foreach ($dom as $i) {
             $header = $i->find('dt');
             if (empty($header[0]->text())) {
                 continue;
             }
             $result = $this->analyzeMarcValue($i);
-            //print_r($header[0]->text() . $result[0] . "\n");
+            $key = rtrim($header[0]->text(), ':：');
+            if (in_array($key ,$this->exceptMarcInfoList)) {
+                continue;
+            }
+            $value = $result[0];
+            $results[$key] = $value;
+            print_r($key . $value . "\n");
         }
-        return $result;
+        return $results;
     }
 
     /**
@@ -126,9 +136,23 @@ trait AnalyzeJobTrait
         return $result;
     }
 
-    protected function isEmptyMarc($dom)
-    {
+    /**
+     * @var string[]
+     */
+    public $emptyMarcInfoList = ['题名/责任者'];
 
+    /**
+     * @param string[] $marcInfos
+     */
+    protected function isEmptyMarc(array $marcInfos)
+    {
+        foreach ($this->emptyMarcInfoList as $key)
+        {
+            if (in_array($key, array_keys($marcInfos)) && !empty($marcInfos[$key])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -193,7 +217,10 @@ trait AnalyzeJobTrait
      */
     public function analyzeStatus($dom)
     {
-
+        if (empty($dom)) {
+            return [];
+        }
+        return $dom[0];
     }
 
     /**
@@ -207,17 +234,19 @@ trait AnalyzeJobTrait
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
         try {
-        $marc = $this->analyzeMarc($dom->find($this->marcSelector));
+            $marc = $this->analyzeMarc($dom->find($this->marcSelector));
+            //var_dump($this->isEmptyMarc($marc));
         } catch (\Exception $ex) {
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
         try {
-        $bookCopies = $this->analyzeBookCopy($dom->find($this->bookSelector));
+            $bookCopies = $this->analyzeBookCopy($dom->find($this->bookSelector));
         } catch (\Exception $ex) {
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
         try {
-        $status = $this->analyzeStatus($dom->find($this->statusSelector));
+            $status = $this->analyzeStatus($dom->find($this->statusSelector));
+            //print_r($status . "\n");
         } catch (\Exception $ex) {
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
@@ -225,7 +254,8 @@ trait AnalyzeJobTrait
     }
 
     /**
-     * @var string
+     * @var string Current Marc No.This field is only used to temporarily store the current Marc No when iterating
+     * access to the Marc No list. If it is not iterative access, do not directly access it.
      */
     private $_currentMarcNo;
 
