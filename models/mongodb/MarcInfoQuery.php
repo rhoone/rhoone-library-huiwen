@@ -21,4 +21,22 @@ use rhosocial\base\models\queries\BaseMongoEntityQuery;
 class MarcInfoQuery extends BaseMongoEntityQuery
 {
     use MarcNoQueryTrait;
+
+    /**
+     * @param string $key
+     * @return static
+     */
+    public function key(string $key)
+    {
+        return $this->andWhere(['key' => $key]);
+    }
+
+    /**
+     * @param $value
+     * @return static
+     */
+    public function value($value)
+    {
+        return $this->andWhere(['value' => $value]);
+    }
 }

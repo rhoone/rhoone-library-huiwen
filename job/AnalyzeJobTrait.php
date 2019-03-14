@@ -16,7 +16,7 @@ use rhoone\library\providers\huiwen\models\mongodb\MarcCopy;
 use rhoone\library\providers\huiwen\models\mongodb\MarcInfo;
 use rhoone\library\providers\huiwen\models\mongodb\MarcNo;
 use rhoone\library\providers\huiwen\models\mongodb\MarcStatus;
-use rhoone\library\providers\huiwen\targets\tongjiuniversity\models\mongodb\DownloadedContent;
+use rhoone\library\providers\huiwen\models\mongodb\DownloadedContent;
 use simplehtmldom_1_5\simple_html_dom_node;
 use Sunra\PhpSimple\HtmlDomParser;
 
@@ -120,8 +120,8 @@ trait AnalyzeJobTrait
                 continue;
             }
             $value = $result[0];
-            $results[$key] = $value;
-            //print_r($key . $value . "\n");
+            $results[] = ['key' => $key, 'value' => $value];
+            //var_dump($results[$this->_currentMarcNo]);
         }
         return $results;
     }
@@ -152,8 +152,10 @@ trait AnalyzeJobTrait
     {
         foreach ($this->emptyMarcInfoList as $key)
         {
-            if (in_array($key, array_keys($marcInfos)) && !empty($marcInfos[$key])) {
-                return false;
+            foreach ($marcInfos as $info) {
+                if ($key == $info['key'] && !empty($info['value'])) {
+                    return false;
+                }
             }
         }
         return true;
@@ -245,10 +247,13 @@ trait AnalyzeJobTrait
             $marcNo->empty = true;
             return $marcNo->save();
         }
+
         $marcInfoClass = $this->marcInfoClass;
-        foreach ($marcResults as $key => $value)
+        $deleted = $marcInfoClass::deleteAll(['marc_no' => $this->_currentMarcNo]);
+        //file_put_contents("php://stdout", "deleted $deleted info(s) from " . $this->_currentMarcNo . "\n");
+        foreach ($marcResults as $key => $result)
         {
-            $marcInfo = $marcInfoClass::getOneOrCreate($this->_currentMarcNo, $key, $value);
+            $marcInfo = $marcInfoClass::getOneOrCreate($this->_currentMarcNo, $result['key'], $result['value']);
             /* @var $marcInfo MarcInfo */
             if (!$marcInfo->save()) {
                 file_put_contents("php://stderr", print_r($marcInfo->getErrorSummary()));
