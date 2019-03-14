@@ -71,8 +71,10 @@ class MarcCopy extends BaseMongoEntityModel
     {
         $parent = parent::rules();
         return array_merge($parent,[
-            [['marc_no', 'call_no', 'barcode', 'position', 'status'], 'required'],
+            [['marc_no'], 'required'],
+            [['call_no', 'barcode', 'position', 'status'], 'required', 'skipOnEmpty' => true],
             [['marc_no', 'call_no', 'barcode', 'volume_period', 'position', 'status'], 'string'],
+            [['call_no', 'barcode', 'volume_period', 'position', 'status'], 'default', 'value' => ''],
             ['version', 'integer', 'min' => 0],
             ['version', 'default', 'value' => 0],
             [['marc_no'], 'exist', 'skipOnError' => true, 'targetClass' => $this->marcNoClass, 'targetAttribute' => ['marc_no' => 'marc_no']],
