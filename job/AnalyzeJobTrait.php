@@ -240,7 +240,6 @@ trait AnalyzeJobTrait
             $marcNo->error_analyzing = true;
             $marcNo->reason_analyzing = $ex->getMessage();
             return $marcNo->save();
-            file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
 
         if ($this->isEmptyMarc($marcResults)) {
@@ -267,7 +266,6 @@ trait AnalyzeJobTrait
             $marcNo->error_analyzing = true;
             $marcNo->reason_analyzing = $ex->getMessage();
             return $marcNo->save();
-            file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
 
         $marcCopyClass = $this->marcCopyClass;
@@ -286,7 +284,6 @@ trait AnalyzeJobTrait
             $marcNo->error_analyzing = true;
             $marcNo->reason_analyzing = $ex->getMessage();
             return $marcNo->save();
-            file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
 
         $marcStatusClass = $this->marcStatusClass;
@@ -296,7 +293,6 @@ trait AnalyzeJobTrait
             $marcNo->error_analyzing = true;
             $marcNo->reason_analyzing = $ex->getMessage();
             return $marcNo->save();
-            file_put_contents("php://stderr", print_r($marcStatus->getErrorSummary()));
         }
 
         return $marcNo->save();
