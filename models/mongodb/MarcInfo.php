@@ -71,6 +71,7 @@ class MarcInfo extends BaseMongoEntityModel
             [['marc_no', 'key', 'value'], 'string'],
             ['version', 'integer', 'min' => 0],
             ['version', 'default', 'value' => 0],
+            ['value', 'default', 'value' => ''],
             [['marc_no'], 'exist', 'skipOnError' => true, 'targetClass' => $this->marcNoClass, 'targetAttribute' => ['marc_no' => 'marc_no']],
         ]);
     }
