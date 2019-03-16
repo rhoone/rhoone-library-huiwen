@@ -50,6 +50,7 @@ class MarcStatus extends BaseMongoEntityModel
     public function rules()
     {
         return array_merge(parent::rules(), [
+            [['marc_no'], 'required'],
             [['page_visit'], 'integer', 'min' => 0],
             [['status', 'type'], 'string', 'max' => 255],
             [['marc_no'], 'exist', 'skipOnError' => true, 'targetClass' => $this->marcNoClass, 'targetAttribute' => ['marc_no' => 'marc_no']],
@@ -65,7 +66,7 @@ class MarcStatus extends BaseMongoEntityModel
     {
         $parent = parent::attributes();
         return array_merge($parent, [
-            'marc_no', 'status', 'type', 'page_visit',
+            'marc_no', 'status', 'type', 'page_visit', 'version'
         ]);
     }
 
