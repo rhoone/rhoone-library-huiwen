@@ -100,7 +100,7 @@ trait AnalyzeJobTrait
         return $result;
     }
 
-    public $exceptMarcInfoList = ['豆瓣简介'];
+    public $exceptMarcInfoList = ['豆瓣简介', '随书光盘'];
 
     /**
      * @param simple_html_dom_node[]|simple_html_dom_node|null $dom
@@ -111,17 +111,11 @@ trait AnalyzeJobTrait
         $results = [];
         foreach ($dom as $i) {
             $header = $i->find('dt');
-            if (empty($header[0]->text())) {
+            $key = trim($header[0]->text(), ' :：');
+            if (in_array($key ,$this->exceptMarcInfoList) || empty($header[0]->text())) {
                 continue;
             }
-            $result = $this->analyzeMarcValue($i);
-            $key = rtrim($header[0]->text(), ':：');
-            if (in_array($key ,$this->exceptMarcInfoList)) {
-                continue;
-            }
-            $value = $result[0];
-            $results[] = ['key' => $key, 'value' => $value];
-            //var_dump($results[$this->_currentMarcNo]);
+            $results[] = ['key' => $key, 'value' => $this->analyzeMarcValue($i)[0]];
         }
         return $results;
     }
@@ -143,19 +137,16 @@ trait AnalyzeJobTrait
     /**
      * @var string[]
      */
-    public $emptyMarcInfoList = ['题名/责任者'];
+    public $emptyExceptMarcInfoList = ['题名/责任者'];
 
     /**
      * @param string[] $marcInfos
      */
     protected function isEmptyMarc(array $marcInfos)
     {
-        foreach ($this->emptyMarcInfoList as $key)
-        {
-            foreach ($marcInfos as $info) {
-                if ($key == $info['key'] && !empty($info['value'])) {
-                    return false;
-                }
+        foreach ($marcInfos as $info) {
+            if (in_array($info['key'], $this->emptyExceptMarcInfoList) && !empty($info['value'])) {
+                return false;
             }
         }
         return true;
@@ -215,7 +206,10 @@ trait AnalyzeJobTrait
         return $dom[0]->innertext();
     }
 
-
+    /**
+     * @param string $html
+     * @return bool
+     */
     public function analyze(string $html)
     {
         try {
@@ -319,6 +313,7 @@ trait AnalyzeJobTrait
     public function batchAnalyze() : int
     {
         file_put_contents("php://stdout", count($this->marcNos) . " tasks received.\n");
+        file_put_contents("php://stdout", "start from " . current($this->marcNos) . ", at " . date('Y-m-d H:i:s') . "\n");
         $class = $this->downloadedContentClass;
         $count = 0;
         //$downloadedContents = $class::find()->where(['marc_no' => array_values($this->marcNos)])->all();
@@ -327,12 +322,12 @@ trait AnalyzeJobTrait
         {
             ///* @var $downloadedContent DownloadedContent */
             //$this->_currentMarcNo = $downloadedContent->marc_no;
+            $count++;
+            printf("progress: [%-50s] %d%% Done.\r", str_repeat('#', $count / count($this->marcNos) * 50), $count / count($this->marcNos) * 100);
             $this->_currentMarcNo = $marcNo;
             $downloadedContent = $class::find()->where(['marc_no' => $this->_currentMarcNo])->one();
             $this->analyze($downloadedContent->html);
             //file_put_contents("php://stdout", $this->_currentMarcNo . "\n");
-            $count++;
-            printf("progress: [%-50s] %d%% Done.\r", str_repeat('#', $count / count($this->marcNos) * 50), $count / count($this->marcNos) * 100);
         }
         file_put_contents("php://stdout", "\n");
         file_put_contents("php://stdout", count($this->marcNos) . " tasks finished.\n");
@@ -344,6 +339,6 @@ trait AnalyzeJobTrait
      */
     public function getTtr() : int
     {
-        return count($this->marcNos) < 600 ? 600 : count($this->marcNos);
+        return count($this->marcNos) + 600;
     }
 }
