@@ -12,6 +12,7 @@
 
 namespace rhoone\library\providers\huiwen\job;
 
+use rhoone\library\providers\huiwen\models\elasticsearch\Marc;
 use rhoone\library\providers\huiwen\models\mongodb\MarcCopy;
 use rhoone\library\providers\huiwen\models\mongodb\MarcInfo;
 use rhoone\library\providers\huiwen\models\mongodb\MarcNo;
@@ -45,4 +46,9 @@ class BatchIndexToElasticSearchJob extends baseIndexJob
      * @var string
      */
     public $marcStatusClass = MarcStatus::class;
+
+    /**
+     * @var string
+     */
+    public $indexClass = Marc::class;
 }
