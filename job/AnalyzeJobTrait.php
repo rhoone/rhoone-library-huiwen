@@ -20,6 +20,10 @@ use rhoone\library\providers\huiwen\models\mongodb\DownloadedContent;
 use simplehtmldom_1_5\simple_html_dom_node;
 use Sunra\PhpSimple\HtmlDomParser;
 
+/**
+ * Trait AnalyzeJobTrait
+ * @package rhoone\library\providers\huiwen\job
+ */
 trait AnalyzeJobTrait
 {
     /**
@@ -153,6 +157,7 @@ trait AnalyzeJobTrait
     }
 
     /**
+     * Remove the pair tags.
      * @param string $subject
      * @param string $tagName
      * @return string
@@ -166,6 +171,9 @@ trait AnalyzeJobTrait
     }
 
     /**
+     * This parameter is used to receive a task list.
+     * Therefore, this parameter should not be modified during the task processing phase.
+     * Unless you know the consequences of doing so.
      * @var string[]
      */
     public $marcNos;
