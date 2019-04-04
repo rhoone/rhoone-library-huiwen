@@ -190,14 +190,6 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     }
 
     /**
-     * @param MarcInfo[] $marcInfos
-     */
-    public function setAbstract(array $marcInfos)
-    {
-
-    }
-
-    /**
      * @param MarcCopy[] $marcCopies
      */
     public function setCopies(array $marcCopies)
@@ -259,7 +251,6 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             'ISBNs', // ISBN
             'subjects', // 主题
             'classifications', // 分类号
-            'abstract', // 摘要
             'type', // 类型
             'status', // 状态
             'copies', // 副本
@@ -389,11 +380,6 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                                 'fielddata' => true,
                             ],
                         ],
-                    ],
-                    'abstract' => [
-                        'type' => 'text',
-                        'analyzer' => 'ik_max_word',
-                        'search_analyzer' => 'ik_max_word',
                     ],
                     'copies' => [
                         'properties' => [
