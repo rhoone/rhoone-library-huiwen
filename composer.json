@@ -13,7 +13,8 @@
     "require": {
         "rhoone/yii2-rhoone": "dev-master",
         "rhoone/rhoone-spider": "dev-master",
-        "rhoone/rhoone-library": "dev-master"
+        "rhoone/rhoone-library": "dev-master",
+        "imangazaliev/didom": "*"
     },
     "autoload": {
         "psr-4": {
