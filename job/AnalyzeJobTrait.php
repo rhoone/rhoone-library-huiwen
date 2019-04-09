@@ -34,7 +34,7 @@ trait AnalyzeJobTrait
     /**
      * @var string
      */
-    public $bookSelector = 'div#tabs2 table#item tbody .whitetext';
+    public $copySelector = 'div#tabs2 table#item tbody .whitetext';
 
     /**
      * @var string
@@ -271,7 +271,7 @@ trait AnalyzeJobTrait
         $memory_limit = ini_get('memory_limit');
         ini_set('memory_limit','3072M');
         try {
-            $booksAttributes = $this->analyzeBookCopy($dom->find($this->bookSelector));
+            $booksAttributes = $this->analyzeBookCopy($dom->find($this->copySelector));
         } catch (\Exception $ex) {
             $marcNo->error_analyzing = true;
             $marcNo->reason_analyzing = $ex->getMessage();
