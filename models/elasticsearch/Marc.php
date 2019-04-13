@@ -19,17 +19,17 @@ use rhoone\library\providers\huiwen\models\mongodb\MarcStatus;
 /**
  * Class Marc
  * @property string $marc_no
- * @property string[] $titles
- * @property string[] $authors
- * @property string[] $presses
- * @property string[] $forms
- * @property string[] $ISBNs
- * @property string[] $subjects
- * @property string[] $classifications
- * @property string $type
- * @property string $status
- * @property string[][] $copies
- * @property string[] $notes
+ * @property string[] $titles 题名
+ * @property string[] $authors 责任者
+ * @property string[] $presses 出版发行项
+ * @property string[] $forms 载体形态项
+ * @property string[] $ISBNs ISBN或其它出版编号
+ * @property string[] $subjects 主题
+ * @property string[] $classifications 分类号
+ * @property string $type 馆藏类型
+ * @property string $status 状态
+ * @property string[][] $copies 副本
+ * @property string[] $notes 附注
  * @package rhoone\library\providers\huiwen\models\elasticsearch
  */
 class Marc extends \yii\elasticsearch\ActiveRecord
@@ -56,13 +56,16 @@ class Marc extends \yii\elasticsearch\ActiveRecord
 
     /**
      * Extract title and author from mixed-title-author marc info.
-     * @param string $titleAndAuthor
+     * @param string|string[] $titleAndAuthor If the argument passed in is an array, only the first element is used.
      * @return string[]
      */
     protected function extractTitleAndAuthor(string $titleAndAuthor)
     {
         if (empty($titleAndAuthor)) {
             return null;
+        }
+        if (is_array($titleAndAuthor)) {
+            $titleAndAuthor = current($titleAndAuthor);
         }
         // The "TitleAndAuthor" string is divided into several segments by "/" as a separator.
         $exploded = explode("/", $titleAndAuthor);
@@ -141,19 +144,46 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     }
 
     /**
-     * @param MarcInfo[] $marcInfos
+     * @param string[] $presses
      */
-    public function setPresses(array $marcInfos)
+    protected function extractPresses(array $presses)
     {
-        $key = '出版发行项';
+        $results = [];
+        foreach ($presses as $press)
+        {
+            $exploded = explode(":", $press, 1);
+            if (empty($exploded[0]) && mb_strpos($exploded[1], "：")) {
+                $exploded = exp($exploded[1], "：", 1);
+            }
+            $exploded[0] = trim($exploded[0]);
+            $exploded[1] = trim($exploded[1]);
+
+            $result = [];
+            $result['location'] = $exploded[0];
+            $exploded = exploded(",", $exploded[1], 1);
+            $result['press'] = trim($exploded[0]);
+            $result['date'] = trim($exploded[1]);
+            $results[] = $result;
+        }
+        return $results;
     }
 
     /**
      * @param MarcInfo[] $marcInfos
      */
-    public function setPrices(array $marcInfos)
+    public function setPresses(array $marcInfos)
     {
         $key = '出版发行项';
+        $i = 0;
+        $extracted = $this->extractValues($marcInfos, $key);
+        if (empty($extracted)) {
+            $this->presses = null;
+            return;
+        }
+        if ($this->presses == null) {
+            $this->presses = [];
+        }
+        $this->presses = array_merge($this->presses, $this->extractPresses($extracted));
     }
 
     /**
@@ -162,6 +192,8 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     public function setForms(array $marcInfos)
     {
         $key = '载体形态项';
+        $offset = count($this->forms);
+        $this->forms = array_merge($this->forms, $this->populateKeyValuePairs($marcInfos, [$key], $offset));
     }
 
     /**
@@ -173,6 +205,18 @@ class Marc extends \yii\elasticsearch\ActiveRecord
         $offset = count($this->ISBNs);
         $this->ISBNs = array_merge($this->ISBNs, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
     }
+
+    /**
+     * @param MarcInfo[] $marcInfos
+     */
+    /*
+    public function setPrices(array $marcInfos)
+    {
+        $keyAdditionalList = ['ISBN', 'ISBN及定价', 'ISMN及定价', 'ISRC及定价', 'ISRN及定价', 'ISSN', 'ISSN及定价', 'STRN'];
+        $offset = count($this->ISBNs);
+        $this->ISBNs = array_merge($this->ISBNs, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
+    }
+    */
 
     /**
      * @param MarcInfo[] $marcInfos
@@ -225,7 +269,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
      */
     public function setPageVisit(MarcStatus $marcStatus)
     {
-        $this->page_visit = $marcStatus->page_visit;
+        // $this->page_visit = $marcStatus->page_visit;
     }
 
     /**
@@ -353,11 +397,11 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                             'ISBN' => [
                                 'type' => 'text',
                                 'fielddata' => true,
-                            ],
+                            ],/* Temporarily unable to get price parameters.
                             'price' => [
                                 'type' => 'text',
                                 'fielddata' => true,
-                            ],
+                            ],*/
                             'key' => [
                                 'type' => 'text',
                                 'fielddata' => true,
