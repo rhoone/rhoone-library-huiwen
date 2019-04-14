@@ -174,18 +174,24 @@ class Marc extends \yii\elasticsearch\ActiveRecord
         $results = [];
         foreach ($presses as $press)
         {
-            $exploded = explode(':', $press, 2);
-            if (empty(trim($exploded[0])) && mb_strpos($exploded[1], "：")) {
-                $exploded = explode($exploded[1], '：', 2);
-            }
-            $exploded[0] = trim($exploded[0]);
-            $exploded[1] = trim($exploded[1]);
-
             $result = [];
-            $result['location'] = $exploded[0];
-            $exploded = explode(',', $exploded[1], 2);
-            $result['press'] = trim($exploded[0]);
-            $result['date'] = trim($exploded[1]);
+            $exploded = explode(':', $press, 2);
+            if (count($exploded) == 1) {
+                $result['press'] = trim($exploded[0]);
+                $result['location'] = '';
+                $result['date'] = '';
+            } else {
+                if (empty(trim($exploded[0])) && mb_strpos($exploded[1], "：")) {
+                    $exploded = explode($exploded[1], '：', 2);
+                }
+                $exploded[0] = trim($exploded[0]);
+                $exploded[1] = trim($exploded[1]);
+
+                $result['location'] = $exploded[0];
+                $exploded = explode(',', $exploded[1], 2);
+                $result['press'] = trim($exploded[0]);
+                $result['date'] = trim($exploded[1]);
+            }
             $results[] = $result;
         }
         return $results;
