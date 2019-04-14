@@ -86,7 +86,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
      * @param int $offset
      * @return string[][]
      */
-    protected function populateKeyValuePairs(array $marcInfos, array $keys, int &$offset = 0)
+    protected function populateKeyValuePairs(array $marcInfos, array $keys, int &$offset = 0) : array
     {
         $index = [];
         foreach ($keys as $key)
@@ -112,8 +112,10 @@ class Marc extends \yii\elasticsearch\ActiveRecord
         $keyTitleAndAuthor = '题名/责任者';
         $titleAndAuthor = $this->extractTitleAndAuthor($this->extractValues($marcInfos, $keyTitleAndAuthor));
 
-        $this->titles[$i]['key'] = '题名';
-        $this->titles[$i]['title'] = $titleAndAuthor[0];
+        $this->titles = array_merge($this->titles, [0 => [
+            'key' => '题名',
+            'title' => $titleAndAuthor[0],
+        ]]);
 
         $keyAdditionalList = ['并列正题名', '统一题名', '翻译提名', '封面提名', '书脊题名', '前题名', '后续提名',
             '卷端题名', '变异题名', '曾用题名(连续出版物)', '展开题名(连续出版物)', '简体题名',  '丛编统一题名',
@@ -138,11 +140,30 @@ class Marc extends \yii\elasticsearch\ActiveRecord
         */
         $keyAdditionalList = ['个人责任者', '个人主要责任者', '个人次要责任者', '团体责任者', '团体主要责任者',
             '团体次要责任者', '丛编个人名称', '丛编团体名称', '丛编会议名称', '其他责任者'];
+        $dutyList = ['著', '编著', '主编', '原著', '编', '编写', '译', '作诗', '编译', '撰', '辑注', '评述', '等编', '选编', '撰稿', '批', '编选'];
         if (empty($this->authors)) {
             $this->authors = [];
         }
         $offset = count($this->authors);
-        $this->authors = array_merge($this->authors, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
+        $index = [];
+        foreach ($keyAdditionalList as $key)
+        {
+            $results = $this->extractValues($marcInfos, $key);
+            foreach ($results as $result)
+            {
+                $index[$offset]['key'] = $key;
+                $exploded = explode(' ', $result);var_dump($exploded);
+                if (in_array(trim(end($exploded)), $dutyList)) {
+                    $index[$offset]['author'] = implode(' ', explode(' ', $result, -1));
+                    $index[$offset]['duty'] = trim(end($exploded));
+                } else {
+                    $index[$offset]['author'] = $result;
+                    $index[$offset]['duty'] = '';
+                }
+                $offset++;
+            }
+        }
+        $this->authors = array_merge($this->authors, $index);
     }
 
     /**
@@ -153,16 +174,16 @@ class Marc extends \yii\elasticsearch\ActiveRecord
         $results = [];
         foreach ($presses as $press)
         {
-            $exploded = explode(":", $press, 1);
-            if (empty($exploded[0]) && mb_strpos($exploded[1], "：")) {
-                $exploded = exp($exploded[1], "：", 1);
+            $exploded = explode(':', $press, 2);
+            if (empty(trim($exploded[0])) && mb_strpos($exploded[1], "：")) {
+                $exploded = explode($exploded[1], '：', 2);
             }
             $exploded[0] = trim($exploded[0]);
             $exploded[1] = trim($exploded[1]);
 
             $result = [];
             $result['location'] = $exploded[0];
-            $exploded = explode(",", $exploded[1], 1);
+            $exploded = explode(',', $exploded[1], 2);
             $result['press'] = trim($exploded[0]);
             $result['date'] = trim($exploded[1]);
             $results[] = $result;
@@ -245,7 +266,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
      */
     public function setClassifications(array $marcInfos)
     {
-        $keyAdditionalList = ['中图法分类号', '人大法分类号', '可突发分类号', '四库分类号', '其他分类号', '杜威等其它类号'];
+        $keyAdditionalList = ['中图法分类号', '人大法分类号', '科图法分类号', '四库分类号', '其他分类号', '杜威等其它类号'];
         if (empty($this->classifications)) {
             $this->classifications = [];
         }
@@ -266,7 +287,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             $index['volume_period'] = $copy->volume_period;
             $index['position'] = $copy->position;
             $index['status'] = $copy->status;
-            $this->copies[] = $index;
+            $this->copies = array_merge($this->copies, [$index]);
         }
     }
 
@@ -391,6 +412,10 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                                 'type' => 'text',
                                 'analyzer' => 'ik_smart',
                                 'search_analyzer' => 'ik_smart',
+                            ],
+                            'duty' => [
+                                'type' => 'text',
+                                'fielddata' => true,
                             ],
                             'key' => [
                                 'type' => 'text',
