@@ -59,7 +59,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
      * @param string|string[] $titleAndAuthor If the argument passed in is an array, only the first element is used.
      * @return string[]
      */
-    protected function extractTitleAndAuthor(string $titleAndAuthor)
+    protected function extractTitleAndAuthor($titleAndAuthor)
     {
         if (empty($titleAndAuthor)) {
             return null;
@@ -128,7 +128,6 @@ class Marc extends \yii\elasticsearch\ActiveRecord
      */
     public function setAuthors(array $marcInfos)
     {
-        $this->authors = [];
         /* Does not need to extract from it.
         $i = 0;
         $keyTitleAndAuthor = '题名/责任者';
@@ -139,6 +138,9 @@ class Marc extends \yii\elasticsearch\ActiveRecord
         */
         $keyAdditionalList = ['个人责任者', '个人主要责任者', '个人次要责任者', '团体责任者', '团体主要责任者',
             '团体次要责任者', '丛编个人名称', '丛编团体名称', '丛编会议名称', '其他责任者'];
+        if (empty($this->authors)) {
+            $this->authors = [];
+        }
         $offset = count($this->authors);
         $this->authors = array_merge($this->authors, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
     }
@@ -160,7 +162,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
 
             $result = [];
             $result['location'] = $exploded[0];
-            $exploded = exploded(",", $exploded[1], 1);
+            $exploded = explode(",", $exploded[1], 1);
             $result['press'] = trim($exploded[0]);
             $result['date'] = trim($exploded[1]);
             $results[] = $result;
@@ -192,6 +194,9 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     public function setForms(array $marcInfos)
     {
         $key = '载体形态项';
+        if (empty($this->forms)) {
+            $this->forms = [];
+        }
         $offset = count($this->forms);
         $this->forms = array_merge($this->forms, $this->populateKeyValuePairs($marcInfos, [$key], $offset));
     }
@@ -202,6 +207,9 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     public function setISBNs(array $marcInfos)
     {
         $keyAdditionalList = ['ISBN', 'ISBN及定价', 'ISMN及定价', 'ISRC及定价', 'ISRN及定价', 'ISSN', 'ISSN及定价', 'STRN'];
+        if (empty($this->ISBNs)) {
+            $this->ISBNs = [];
+        }
         $offset = count($this->ISBNs);
         $this->ISBNs = array_merge($this->ISBNs, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
     }
@@ -225,6 +233,9 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     {
         $keyAdditionalList = ['个人名称主题', '会议名称主题', '作者题名主题', '团体名称主题', '地名主题', '地理名称主题',
             '学科主题', '家族名称主题', '统一题名主题', '论题主题', '非控制主题', '非控制主题词', '题名主题'];
+        if (empty($this->subjects)) {
+            $this->subjects = [];
+        }
         $offset = count($this->subjects);
         $this->subjects = array_merge($this->subjects, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
     }
@@ -235,6 +246,9 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     public function setClassifications(array $marcInfos)
     {
         $keyAdditionalList = ['中图法分类号', '人大法分类号', '可突发分类号', '四库分类号', '其他分类号', '杜威等其它类号'];
+        if (empty($this->classifications)) {
+            $this->classifications = [];
+        }
         $offset = count($this->classifications);
         $this->classifications = array_merge($this->classifications, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
     }
@@ -257,19 +271,25 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     }
 
     /**
-     * @param MarcStatus $marcStatus
+     * @param MarcStatus|string $marcStatus
      */
-    public function setType(MarcStatus $marcStatus)
+    public function setType($marcStatus)
     {
-        $this->type = $marcStatus->type;
+        if ($marcStatus instanceof MarcStatus) {
+            $marcStatus = $marcStatus->type;
+        }
+        $this->type = $marcStatus;
     }
 
     /**
-     * @param MarcStatus $marcStatus
+     * @param MarcStatus|string $marcStatus
      */
-    public function setPageVisit(MarcStatus $marcStatus)
+    public function setStatus($marcStatus)
     {
-        // $this->page_visit = $marcStatus->page_visit;
+        if ($marcStatus instanceof MarcStatus) {
+            $marcStatus = $marcStatus->status;
+        }
+        $this->status = $marcStatus;
     }
 
     /**
@@ -285,6 +305,9 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             '编号特点附注', '著录信息附注', '补编附注', '表演者附注', '装订获得附注', '计算机文件附注', '计算机类型附注',
             '计算机细节附注', '语种附注', '读者对相附注', '责任者附注', '载体形态附注', '连接字段附注', '连接款目附注',
             '采访附注', '题名责任附注'];
+        if (empty($this->notes)) {
+            $this->notes = [];
+        }
         $offset = count($this->notes);
         $this->notes = array_merge($this->notes, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
     }
