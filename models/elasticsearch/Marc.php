@@ -158,7 +158,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             foreach ($results as $result)
             {
                 $index[$offset]['key'] = $key;
-                $exploded = explode(' ', $result);var_dump($exploded);
+                $exploded = explode(' ', $result);
                 if (in_array(trim(end($exploded)), $dutyList)) {
                     $index[$offset]['author'] = implode(' ', explode(' ', $result, -1));
                     $index[$offset]['duty'] = trim(end($exploded));
@@ -270,7 +270,32 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             $this->subjects = [];
         }
         $offset = count($this->subjects);
-        $this->subjects = array_merge($this->subjects, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
+        $results = $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset);
+        $splitted = [];
+        foreach ($results as $result) {
+            $subjects = (array_unique(explode('-', $result['value'])));
+            foreach ($subjects as $key => $subject) {
+                if (empty($subject)) {
+                    unset($subjects[$key]);
+                }
+            }
+            if (!array_key_exists($result['key'], $splitted)) {
+                $splitted[$result['key']] = $subjects;
+            } else {
+                $splitted[$result['key']] = array_merge($splitted[$result['key']], $subjects);
+            }
+        }
+        $subjects = [];
+        foreach ($splitted as $key => $s) {
+            $splitted[$key] = array_flip($s);
+            foreach ($splitted[$key] as $k => $subject) {
+                $subjects[] = [
+                    'key' => $key,
+                    'value' => $k,
+                ];
+            }
+        }
+        $this->subjects = $subjects;
     }
 
     /**
