@@ -33,26 +33,20 @@ trait IndexJobTrait
 
     /**
      * @param MarcNo $model
-     * @return array
-     */
-    protected function populateCopies(MarcNo $model) : array
-    {
-        $model->marcCopies;
-    }
-
-    /**
-     * @param MarcNo $model
      * @return int
      */
     public function index($model) : int
     {
         $indexClass = $this->indexClass;
-        $index = new $indexClass();
-        /* @var $index Marc */
-        $index->attributes = [
+        $index = new $indexClass([
             'marc_no' => $model->marc_no,
-            'title' => $model->marcInfos['title']
-        ];
+            'copyAttributes' => $model->marcCopies,
+            'infoAttributes' => $model->marcInfos,
+            'statusAttributes' => $model->marcStatus,
+        ]);
+        /* @var $index Marc */
+        $index->primaryKey = intval($model->marc_no);
+        return $index->save();
     }
 
     /**
