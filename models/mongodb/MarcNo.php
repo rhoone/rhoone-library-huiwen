@@ -31,7 +31,7 @@ use Yii;
  * @property-read DownloadedContent $downloadedContent
  * @property-read MarcInfo[] $marcInfos
  * @property-read MarcCopy[] $marcCopies
- * @property-read MarcStatus[] $marcStatus
+ * @property-read MarcStatus $marcStatus
  * @package rhoone\library\providers\huiwen\models\mongodb
  */
 class MarcNo extends BaseMongoEntityModel
