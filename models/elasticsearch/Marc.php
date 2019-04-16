@@ -231,7 +231,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             $this->forms = [];
         }
         $offset = count($this->forms);
-        $this->forms = array_merge($this->forms, $this->populateKeyValuePairs($marcInfos, [$key], $offset));
+        $this->forms = array_merge($this->forms, array_values($this->populateKeyValuePairs($marcInfos, [$key], $offset)));
     }
 
     /**
@@ -479,7 +479,11 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     ],
                     'ISBNs' => [
                         'properties' => [
-                            'ISBN' => [
+                            'key' => [
+                                'type' => 'text',
+                                'fielddata' => true,
+                            ],
+                            'value' => [
                                 'type' => 'text',
                                 'fielddata' => true,
                             ],/* Temporarily unable to get price parameters.
@@ -487,10 +491,6 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                                 'type' => 'text',
                                 'fielddata' => true,
                             ],*/
-                            'key' => [
-                                'type' => 'text',
-                                'fielddata' => true,
-                            ],
                         ],
                     ],
                     'forms' => [
@@ -503,20 +503,23 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     ],
                     'subjects' => [
                         'properties' => [
-                            'subject' => [
+                            'key' => [
                                 'type' => 'text',
-                                'analyzer' => 'ik_smart',
-                                'search_analyzer' => 'ik_max_word',
+                                'fielddata' => true,
+                            ],
+                            'value' => [
+                                'type' => 'text',
+                                'fielddata' => true,
                             ],
                         ],
                     ],
                     'classifications' => [
                         'properties' => [
-                            'classification' => [
+                            'key' => [
                                 'type' => 'text',
                                 'fielddata' => true,
                             ],
-                            'key' => [
+                            'value' => [
                                 'type' => 'text',
                                 'fielddata' => true,
                             ],
@@ -546,14 +549,14 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     ],
                     'notes' => [
                         'properties' => [
-                            'note' => [
-                                'type' => 'text',
-                                'analyzer' => 'ik_max_word',
-                                'search_analyzer' => 'ik_max_word',
-                            ],
                             'key' => [
                                 'type' => 'text',
                                 'fielddata' => true,
+                            ],
+                            'value' => [
+                                'type' => 'text',
+                                'analyzer' => 'ik_max_word',
+                                'search_analyzer' => 'ik_max_word',
                             ],
                         ],
                     ],
@@ -586,6 +589,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             //'aliases' => [ /* ... */ ],
             //'creation_date' => '...'
         ]);
+        return true;
     }
 
     /**
@@ -604,6 +608,29 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     public static function type()
     {
         return 'library';
+    }
+
+    public function setInfoAttributes(array $infos)
+    {
+        $this->setPresses($infos);
+        $this->setForms($infos);
+        $this->setAuthors($infos);
+        $this->setClassifications($infos);
+        $this->setISBNs($infos);
+        $this->setNotes($infos);
+        $this->setSubjects($infos);
+        $this->setTitles($infos);
+    }
+
+    public function setCopyAttributes(array $copies)
+    {
+        $this->setCopies($copies);
+    }
+
+    public function setStatusAttributes(MarcStatus $status)
+    {
+        $this->setType($status);
+        $this->setStatus($status);
     }
 #endregion
 }
