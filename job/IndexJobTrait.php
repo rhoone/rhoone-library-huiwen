@@ -37,15 +37,21 @@ trait IndexJobTrait
      */
     public function index($model) : int
     {
+        if ($model->isEmpty) {
+            return true;
+        }
         $indexClass = $this->indexClass;
-        $index = new $indexClass([
-            'marc_no' => $model->marc_no,
-            'copyAttributes' => $model->marcCopies,
-            'infoAttributes' => $model->marcInfos,
-            'statusAttributes' => $model->marcStatus,
-        ]);
+        $index = $indexClass::find()->where(['marc_no' => $model->marc_no])->one();
         /* @var $index Marc */
-        $index->primaryKey = intval($model->marc_no);
+        if (!$index) {
+            $index = new $indexClass([
+                'marc_no' => $model->marc_no,
+            ]);
+            $index->primaryKey = intval($model->marc_no);
+        }
+        $index->copyAttributes = $model->marcCopies;
+        $index->infoAttributes = $model->marcInfos;
+        $index->statusAttributes = $model->marcStatus;
         return $index->save();
     }
 
