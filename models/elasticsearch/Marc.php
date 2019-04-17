@@ -30,6 +30,9 @@ use rhoone\library\providers\huiwen\models\mongodb\MarcStatus;
  * @property string $status 状态
  * @property string[][] $copies 副本
  * @property string[] $notes 附注
+ * @property-write MarcInfo[] infoAttributes
+ * @property-write MarcCopy[] copyAttributes
+ * @property-write MarcStatus statusAttributes
  * @package rhoone\library\providers\huiwen\models\elasticsearch
  */
 class Marc extends \yii\elasticsearch\ActiveRecord
@@ -631,6 +634,14 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     {
         $this->setType($status);
         $this->setStatus($status);
+    }
+
+    /**
+     * @return string|MarcQuery
+     */
+    public static function find()
+    {
+        return \Yii::createObject(MarcQuery::class, [get_called_class()]);
     }
 #endregion
 }
