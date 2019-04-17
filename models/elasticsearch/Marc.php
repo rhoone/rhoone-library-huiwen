@@ -437,7 +437,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                         'properties' => [
                             'title' => [
                                 'type' => 'text',
-                                'analyzer' => 'ik_max_word',
+                                'analyzer' => 'ik_smart',
                                 'search_analyzer' => 'ik_max_word',
                             ],
                             'key' => [
@@ -558,7 +558,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                             ],
                             'value' => [
                                 'type' => 'text',
-                                'analyzer' => 'ik_max_word',
+                                'analyzer' => 'ik_smart',
                                 'search_analyzer' => 'ik_max_word',
                             ],
                         ],
