@@ -13,13 +13,12 @@
 namespace rhoone\library\providers\huiwen\job;
 
 use DiDom\Document;
+use DiDom\Element;
 use rhoone\library\providers\huiwen\models\mongodb\MarcCopy;
 use rhoone\library\providers\huiwen\models\mongodb\MarcInfo;
 use rhoone\library\providers\huiwen\models\mongodb\MarcNo;
 use rhoone\library\providers\huiwen\models\mongodb\MarcStatus;
 use rhoone\library\providers\huiwen\models\mongodb\DownloadedContent;
-use simplehtmldom_1_5\simple_html_dom_node;
-use Sunra\PhpSimple\HtmlDomParser;
 
 /**
  * Trait AnalyzeJobTrait
@@ -35,7 +34,7 @@ trait AnalyzeJobTrait
     /**
      * @var string
      */
-    public $copySelector = 'div#tabs2 table#item tbody .whitetext';
+    public $copySelector = '#tabs2 table .whitetext';
 
     /**
      * @var string
@@ -108,7 +107,7 @@ trait AnalyzeJobTrait
     public static $exceptMarcInfoList = ['豆瓣简介', '随书光盘'];
 
     /**
-     * @param simple_html_dom_node[]|simple_html_dom_node|null $dom
+     * @param Element[]|Document|null $dom
      * @return string[]
      */
     public static function analyzeMarc($dom)
@@ -126,15 +125,15 @@ trait AnalyzeJobTrait
     }
 
     /**
-     * @param simple_html_dom_node[]|simple_html_dom_node|null $dom
+     * @param Element[]|Document|null $dom
      * @return string
      */
-    public static function analyzeMarcValue($dom)
+    public static function analyzeMarcValue($dom, $decode_gbk = false)
     {
         $contents = $dom->find('dd');
         $result = [];
         foreach ($contents as $content) {
-            $result[] = static::gbk_decode(trim($content->text()));
+            $result[] = $decode_gbk ? static::gbk_decode(trim($content->text())) : trim($content->text());
         }
         return $result;
     }
@@ -180,14 +179,14 @@ trait AnalyzeJobTrait
     public $marcNos;
 
     /**
-     * @param simple_html_dom_node[]|simple_html_dom_node|null $dom
+     * @param Element[]|Document|null $dom
      * @return array
      */
     public static function analyzeBookCopy($dom)
     {
         $booksAttributes = [];
         foreach ($dom as $book) {
-            $book = HtmlDomParser::str_get_html(static::removeTag($book, "span"));
+            $book = new Document(static::removeTag($book, "span"));
             $item = $book->find('td');
             if (count($item) < 5) {
                 continue;
@@ -205,14 +204,14 @@ trait AnalyzeJobTrait
     }
 
     /**
-     * @param simple_html_dom_node[]|simple_html_dom_node|null $dom
+     * @param Element[]|Document|null $dom
      */
     public static function analyzeStatus($dom)
     {
         if (empty($dom)) {
             return [];
         }
-        return $dom[0]->innertext();
+        return $dom[0]->text();
     }
 
     /**
@@ -268,7 +267,6 @@ trait AnalyzeJobTrait
                 file_put_contents("php://stderr", print_r($marcInfo->getErrorSummary()));
             }
         }
-        //var_dump($this->isEmptyMarc($marcResults));
 
         $memory_limit = ini_get('memory_limit');
         ini_set('memory_limit','3072M');
@@ -328,6 +326,8 @@ trait AnalyzeJobTrait
         $count = 0;
         //$downloadedContents = $class::find()->where(['marc_no' => array_values($this->marcNos)])->all();
         //foreach ($downloadedContents as $downloadedContent)
+        $success = 0;
+        $fail = 0;
         foreach ($this->marcNos as $key => $marcNo)
         {
             ///* @var $downloadedContent DownloadedContent */
@@ -336,12 +336,16 @@ trait AnalyzeJobTrait
             printf("progress: [%-50s] %d%% Done.\r", str_repeat('#', $count / count($this->marcNos) * 50), $count / count($this->marcNos) * 100);
             $this->_currentMarcNo = $marcNo;
             $downloadedContent = $class::find()->where(['marc_no' => $this->_currentMarcNo])->one();
-            $this->analyze($downloadedContent->html);
+            if ($this->analyze($downloadedContent->html)) {
+                $success++;
+            } else {
+                $fail++;
+            }
             //file_put_contents("php://stdout", $this->_currentMarcNo . "\n");
         }
         file_put_contents("php://stdout", "\n");
         file_put_contents("php://stdout", count($this->marcNos) . " tasks finished.\n");
-        return 0;
+        return $success;
     }
 
     /**
