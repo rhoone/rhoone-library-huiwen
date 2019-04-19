@@ -12,6 +12,7 @@
 
 namespace rhoone\library\providers\huiwen\job;
 
+use DiDom\Document;
 use rhoone\library\providers\huiwen\models\mongodb\MarcCopy;
 use rhoone\library\providers\huiwen\models\mongodb\MarcInfo;
 use rhoone\library\providers\huiwen\models\mongodb\MarcNo;
@@ -49,7 +50,7 @@ trait AnalyzeJobTrait
      * @param bool $ignore_non_gbk
      * @return string
      */
-    private function gbk_decode($str, $prefix = '\&#x', $postfix = ';', $ignore_non_gbk = false)
+    private static function gbk_decode($str, $prefix = '\&#x', $postfix = ';', $ignore_non_gbk = false)
     {
         /**
          * GBK 模式。
@@ -104,22 +105,22 @@ trait AnalyzeJobTrait
         return $result;
     }
 
-    public $exceptMarcInfoList = ['豆瓣简介', '随书光盘'];
+    public static $exceptMarcInfoList = ['豆瓣简介', '随书光盘'];
 
     /**
      * @param simple_html_dom_node[]|simple_html_dom_node|null $dom
      * @return string[]
      */
-    public function analyzeMarc($dom)
+    public static function analyzeMarc($dom)
     {
         $results = [];
         foreach ($dom as $i) {
             $header = $i->find('dt');
             $key = trim($header[0]->text(), ' :：');
-            if (in_array($key ,$this->exceptMarcInfoList) || empty($header[0]->text())) {
+            if (in_array($key ,static::$exceptMarcInfoList) || empty($header[0]->text())) {
                 continue;
             }
-            $results[] = ['key' => $key, 'value' => $this->analyzeMarcValue($i)[0]];
+            $results[] = ['key' => $key, 'value' => static::analyzeMarcValue($i)[0]];
         }
         return $results;
     }
@@ -128,12 +129,12 @@ trait AnalyzeJobTrait
      * @param simple_html_dom_node[]|simple_html_dom_node|null $dom
      * @return string
      */
-    public function analyzeMarcValue($dom)
+    public static function analyzeMarcValue($dom)
     {
         $contents = $dom->find('dd');
         $result = [];
         foreach ($contents as $content) {
-            $result[] = $this->gbk_decode(trim($content->text()));
+            $result[] = static::gbk_decode(trim($content->text()));
         }
         return $result;
     }
@@ -141,15 +142,15 @@ trait AnalyzeJobTrait
     /**
      * @var string[]
      */
-    public $emptyExceptMarcInfoList = ['题名/责任者'];
+    public static $emptyExceptMarcInfoList = ['题名/责任者'];
 
     /**
      * @param string[] $marcInfos
      */
-    protected function isEmptyMarc(array $marcInfos)
+    protected static function isEmptyMarc(array $marcInfos)
     {
         foreach ($marcInfos as $info) {
-            if (in_array($info['key'], $this->emptyExceptMarcInfoList) && !empty($info['value'])) {
+            if (in_array($info['key'], static::$emptyExceptMarcInfoList) && !empty($info['value'])) {
                 return false;
             }
         }
@@ -162,7 +163,7 @@ trait AnalyzeJobTrait
      * @param string $tagName
      * @return string
      */
-    protected function removeTag(string $subject, string $tagName) : string
+    protected static function removeTag(string $subject, string $tagName) : string
     {
         $tagStart = "<$tagName>";
         $tagEnd = "</$tagName>";
@@ -182,17 +183,17 @@ trait AnalyzeJobTrait
      * @param simple_html_dom_node[]|simple_html_dom_node|null $dom
      * @return array
      */
-    public function analyzeBookCopy($dom)
+    public static function analyzeBookCopy($dom)
     {
         $booksAttributes = [];
         foreach ($dom as $book) {
-            $book = HtmlDomParser::str_get_html($this->removeTag($book, "span"));
+            $book = HtmlDomParser::str_get_html(static::removeTag($book, "span"));
             $item = $book->find('td');
             if (count($item) < 5) {
                 continue;
             }
             $bookAttribute = [];
-            $bookAttribute['marc_no'] = $this->_currentMarcNo;
+            //$bookAttribute['marc_no'] = $this->_currentMarcNo;
             $bookAttribute['call_no'] = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[0]->text())));
             $bookAttribute['barcode'] = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[1]->text())));
             $bookAttribute['volume_period'] = trim(str_replace('&nbsp;', ' ', htmlspecialchars_decode($item[2]->text())));
@@ -206,7 +207,7 @@ trait AnalyzeJobTrait
     /**
      * @param simple_html_dom_node[]|simple_html_dom_node|null $dom
      */
-    public function analyzeStatus($dom)
+    public static function analyzeStatus($dom)
     {
         if (empty($dom)) {
             return [];
@@ -221,7 +222,8 @@ trait AnalyzeJobTrait
     public function analyze(string $html)
     {
         try {
-            $dom = HtmlDomParser::str_get_html($html);
+            //$dom = HtmlDomParser::str_get_html($html);
+            $dom = new Document($html);
         } catch (\Exception $ex) {
             file_put_contents("php://stderr", __LINE__ . $ex->getMessage() . "\n");
         }
@@ -281,7 +283,7 @@ trait AnalyzeJobTrait
         $marcCopyClass = $this->marcCopyClass;
         foreach ($booksAttributes as $marc_no => $attributes)
         {
-            $book = $marcCopyClass::getOneOrCreate($attributes['marc_no'], $attributes['barcode'], $attributes['call_no'], $attributes['volume_period'], $attributes['position'], $attributes['status']);
+            $book = $marcCopyClass::getOneOrCreate($this->_currentMarcNo, $attributes['barcode'], $attributes['call_no'], $attributes['volume_period'], $attributes['position'], $attributes['status']);
             /* @var $book MarcCopy */
             if (!$book->save()) {
                 file_put_contents("php://stderr", print_r($book->getErrorSummary()));
