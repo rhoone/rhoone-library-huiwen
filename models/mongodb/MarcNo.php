@@ -32,7 +32,6 @@ use Yii;
  * @property-read MarcInfo[] $marcInfos
  * @property-read MarcCopy[] $marcCopies
  * @property-read MarcStatus $marcStatus
- * @property-read book $isEmpty
  * @package rhoone\library\providers\huiwen\models\mongodb
  */
 class MarcNo extends BaseMongoEntityModel
@@ -175,14 +174,6 @@ class MarcNo extends BaseMongoEntityModel
     public function getMarcStatus()
     {
         return $this->hasOne($this->marcStatusClass, ['marc_no' => 'marc_no']);
-    }
-
-    /**
-     * @return bool
-     */
-    public function getIsEmpty()
-    {
-        return $this->marcStatus == null;
     }
 
     /**
