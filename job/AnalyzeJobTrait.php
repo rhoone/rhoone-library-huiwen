@@ -229,14 +229,10 @@ trait AnalyzeJobTrait
         $marcNoClass = $this->marcNoClass;
         $marcNo = $marcNoClass::getOneOrCreate($this->_currentMarcNo);
         /* @var $marcNo MarcNo */
-        $memory_limit = ini_get('memory_limit');
-        ini_set('memory_limit','3072M');
         $downloadedContent = $marcNo->downloadedContent;
         if ($downloadedContent) {
             $marcNo->last_downloaded_content_version = $downloadedContent->version;
         }
-        ini_set('memory_limit',$memory_limit);
-        //var_dump($marcNo->attributes);
         if (!$marcNo->save()) {
             file_put_contents("php://stderr", print_r($marcNo->getErrorSummary()));
         }
@@ -258,18 +254,13 @@ trait AnalyzeJobTrait
         //file_put_contents("php://stdout", "deleted $deleted info(s) from " . $this->_currentMarcNo . "\n");
         foreach ($marcResults as $key => $result)
         {
-            $memory_limit = ini_get('memory_limit');
-            ini_set('memory_limit','3072M');
             $marcInfo = $marcInfoClass::getOneOrCreate($this->_currentMarcNo, $result['key'], $result['value']);
-            ini_set('memory_limit',$memory_limit);
             /* @var $marcInfo MarcInfo */
             if (!$marcInfo->save()) {
                 file_put_contents("php://stderr", print_r($marcInfo->getErrorSummary()));
             }
         }
 
-        $memory_limit = ini_get('memory_limit');
-        ini_set('memory_limit','3072M');
         try {
             $booksAttributes = $this->analyzeBookCopy($dom->find($this->copySelector));
         } catch (\Exception $ex) {
@@ -287,7 +278,6 @@ trait AnalyzeJobTrait
                 file_put_contents("php://stderr", print_r($book->getErrorSummary()));
             }
         }
-        ini_set('memory_limit',$memory_limit);
 
         try {
             $statusInnerText = $this->analyzeStatus($dom->find($this->statusSelector));
