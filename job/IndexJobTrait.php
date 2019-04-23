@@ -37,7 +37,7 @@ trait IndexJobTrait
      */
     public function index($model) : int
     {
-        if ($model->isEmpty) {
+        if ($model->empty) {
             return true;
         }
         $indexClass = $this->indexClass;
