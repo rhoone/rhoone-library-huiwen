@@ -435,7 +435,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     ],
                     'titles' => [
                         'properties' => [
-                            'title' => [
+                            'value' => [
                                 'type' => 'text',
                                 'analyzer' => 'ik_smart',
                                 'search_analyzer' => 'ik_max_word',
