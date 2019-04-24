@@ -117,7 +117,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
 
         $this->titles = array_merge($this->titles, [0 => [
             'key' => '题名',
-            'title' => $titleAndAuthor[0],
+            'value' => $titleAndAuthor[0],
         ]]);
 
         $keyAdditionalList = ['并列正题名', '统一题名', '翻译提名', '封面提名', '书脊题名', '前题名', '后续提名',
