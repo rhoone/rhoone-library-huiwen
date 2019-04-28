@@ -23,13 +23,14 @@ use rhoone\library\providers\huiwen\models\mongodb\MarcStatus;
  * @property string[] $authors 责任者
  * @property string[] $presses 出版发行项
  * @property string[] $forms 载体形态项
- * @property string[] $ISBNs ISBN或其它出版编号
+ * @property string[] $ISBNAndPrices ISBN或其它出版编号及定价
  * @property string[] $subjects 主题
  * @property string[] $classifications 分类号
  * @property string $type 馆藏类型
  * @property string $status 状态
  * @property string[][] $copies 副本
  * @property string[] $notes 附注
+ * @property string[] $electronicResources 电子资源
  * @property-write MarcInfo[] infoAttributes
  * @property-write MarcCopy[] copyAttributes
  * @property-write MarcStatus statusAttributes
@@ -240,14 +241,22 @@ class Marc extends \yii\elasticsearch\ActiveRecord
     /**
      * @param MarcInfo[] $marcInfos
      */
-    public function setISBNs(array $marcInfos)
+    public function setISBNAndPrices(array $marcInfos)
     {
         $keyAdditionalList = ['ISBN', 'ISBN及定价', 'ISMN及定价', 'ISRC及定价', 'ISRN及定价', 'ISSN', 'ISSN及定价', 'STRN'];
         if (empty($this->ISBNs)) {
             $this->ISBNs = [];
         }
         $offset = count($this->ISBNs);
-        $this->ISBNs = array_merge($this->ISBNs, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
+        $additional = $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset);
+        foreach ($additional as $i => $isbn) {
+            $seperated = explode('/', $isbn['value']);
+            $additional[$i]['value'] = $seperated[0];
+            $additional[$i]['compressed'] = str_replace([' ', '-'], '', trim($seperated[0]));
+            $additional[$i]['price']  = (isset($seperated[1]) && !empty($seperated[1])) ? $seperated[1] : null;
+        }
+        var_dump($additional);
+        $this->ISBNs = array_merge($this->ISBNs, $additional);
     }
 
     /**
@@ -372,6 +381,20 @@ class Marc extends \yii\elasticsearch\ActiveRecord
         $offset = count($this->notes);
         $this->notes = array_merge($this->notes, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
     }
+
+    /**
+     * @param MarcInfo[] $marcInfos
+     */
+    public function setElectronicResources(array $marcInfos)
+    {
+        $keyAdditionalList = ['电子资源'];
+        if (empty($this->electronicResources))
+        {
+            $this->electronicResources = [];
+        }
+        $offset = count($this->electronicResources);
+        $this->electronicResources = array_merge($this->electronicResources, $this->populateKeyValuePairs($marcInfos, $keyAdditionalList, $offset));
+    }
 #endregion
     /**
      * @return array|string[]
@@ -392,6 +415,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             'status', // 状态
             'copies', // 副本
             'notes', // 附注
+            'electronicResources', // 电子资源
         ];
     }
 
@@ -418,6 +442,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             'classifications',
             'copies',
             'notes',
+            'electronicResources',
         ];
     }
 #region operation
@@ -489,11 +514,15 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                             'value' => [
                                 'type' => 'text',
                                 'fielddata' => true,
-                            ],/* Temporarily unable to get price parameters.
+                            ],
+                            'compressed' => [
+                                'type' => 'text',
+                                'fielddata' => true,
+                            ],
                             'price' => [
                                 'type' => 'text',
                                 'fielddata' => true,
-                            ],*/
+                            ],
                         ],
                     ],
                     'forms' => [
@@ -563,6 +592,18 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                             ],
                         ],
                     ],
+                    'electronicResources' => [
+                        'properties' => [
+                            'key' => [
+                                'type' => 'text',
+                                'fielddata' => true,
+                            ],
+                            'value' => [
+                                'type' => 'text',
+                                'fielddata' => true,
+                            ],
+                        ]
+                    ]
                 ],
             ],
         ];
@@ -615,14 +656,15 @@ class Marc extends \yii\elasticsearch\ActiveRecord
 
     public function setInfoAttributes(array $infos)
     {
-        $this->setPresses($infos);
-        $this->setForms($infos);
+        $this->setTitles($infos);
         $this->setAuthors($infos);
+        $this->setPresses($infos);
+        $this->setISBNAndPrices($infos);
+        $this->setForms($infos);
         $this->setClassifications($infos);
-        $this->setISBNs($infos);
         $this->setNotes($infos);
         $this->setSubjects($infos);
-        $this->setTitles($infos);
+        $this->setElectronicResources($infos);
     }
 
     public function setCopyAttributes(array $copies)
