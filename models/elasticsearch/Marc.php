@@ -253,7 +253,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             $seperated = explode('/', $isbn['value']);
             $additional[$i]['value'] = $seperated[0];
             $additional[$i]['compressed'] = str_replace([' ', '-'], '', trim($seperated[0]));
-            $additional[$i]['price']  = (isset($seperated[1]) && !empty($seperated[1])) ? $seperated[1] : null;
+            $additional[$i]['price']  = (isset($seperated[1]) && !empty($seperated[1])) ? $seperated[1] : '';
         }
         $this->ISBNs = array_merge($this->ISBNs, $additional);
     }
