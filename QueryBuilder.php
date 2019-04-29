@@ -28,52 +28,92 @@ class QueryBuilder extends Component
 {
     private $_keywords = "";
 
+    /**
+     * @param string $keywords
+     */
     public function setKeywords(string $keywords)
     {
         $this->_keywords = $keywords;
     }
 
+    /**
+     * @return string
+     */
     public function getKeywords()
     {
         return $this->_keywords;
     }
 
+    /**
+     * @param string $delimiter
+     * @return array
+     */
     public function getSeperatedKeywords(string $delimiter = ' ')
     {
         return explode($delimiter, $this->keywords);
     }
 
+    /**
+     * @param array $keywords
+     * @param string $glue
+     */
     public function setSeperatedKeywords(array $keywords, string $glue = " ")
     {
         $this->keywords = implode($glue, $keywords);
     }
 
-    protected function selectISBNs(array $keywords)
+    /**
+     * @param array $keywords
+     * @return array
+     */
+    protected function selectBarcode(array $keywords)
     {
-
+        return [];
     }
 
-    protected function selectCallNo(array $keywords)
+    /**
+     * @param array $keywords
+     * @return array
+     */
+    protected function selectMarcNo(array $keywords)
     {
-        $classRegex = '/^{?\[?([A-K]|[N-V]|X|Z)[A-U]?\d{0,3}(?:\/\d{1,3})?a?(?:[.|\-|=|+]\d{1,3}|\(\d{1,3}\)|"\d{1,3}"|<\d{1,3}>)*\]?(?:}<(?:\[?([A-K]|[N-V]|X|Z)[A-U]?\d{0,3}(?:\/\d{1,3})?a?(?:[.|\-|=|+]\d{1,3}|\(\d{1,3}\)|"\d{1,3}"|<\d{1,3}>)*\]?)>)?(?:[:+](?:{?\[?([A-K]|[N-V]|X|Z)[A-U]?\d{0,3}(?:\/\d{1,3})?a?(?:[.|\-|=|+]\d{1,3}|\(\d{1,3}\)|"\d{1,3}"|<\d{1,3}>)*\]?(?:}<(?:\[?([A-K]|[N-V]|X|Z)[A-U]?\d{0,3}(?:\/\d{1,3})?a?(?:[.|\-|=|+]\d{1,3}|\(\d{1,3}\)|"\d{1,3}"|<\d{1,3}>)*\]?)>)?))*$/';
+        return [];
+    }
+
+    /**
+     * @param array $keywords
+     * @return array
+     */
+    protected function selectISBNs(array $keywords)
+    {
+        $isbn10Regex = '/^\d{9}(\d|[xX])$/';
+        $isbn13Regex = '/^(97(8|9))?\d{9}(\d|[xX])$/';
+        $issn8Regex = '/^\d{8}$/';
+        $isrc12Regex = '/^[a-zA-Z]{3}\d{9}$/';
         $pointers = [];
         foreach ($keywords as $i => $keyword)
         {
-            $seperated = explode('/', $keyword);
-            if (empty($seperated)) {
-                continue;
+            $keyword = str_replace([' ', '-'], '', trim($keyword));
+            if ((strlen($keyword) == 10 && preg_match($isbn10Regex, $keyword) && substr($keyword, 0, 3) != '000') ||
+                (strlen($keyword) == 13 && preg_match($isbn13Regex, $keyword)) ||
+                (strlen($keyword) == 8 && preg_match($issn8Regex, $keyword)) ||
+                (strlen($keyword) == 12 && preg_match($isrc12Regex, $keyword))
+            )
+            {
+                $pointers[] = $i;
             }
-            if (!preg_match($classRegex, $seperated[0], $matches)) {
-                continue;
-            }
-            if ($matches[0] != $seperated[0]) {
-                continue;
-            }
-            \Yii::info("Call No Matched: " . $keyword);
-            $pointers[] = $i;
         }
-        \Yii::info("Call No Pointers in Keyword Array: " . implode(", ", $pointers));
+        \Yii::info("ISBN Pointers in Keyword Array: " . implode(", ", $pointers));
         return $pointers;
+    }
+
+    /**
+     * @param array $keywords
+     * @return array
+     */
+    protected function selectCallNo(array $keywords)
+    {
+        return [];
     }
 
     public function getQueryOptions()
@@ -89,23 +129,106 @@ class QueryBuilder extends Component
 
     public function getQueryArray()
     {
-        $pointers = $this->selectCallNo($this->seperatedKeywords);
+        $pointersCallNo = $this->selectCallNo($this->seperatedKeywords);
+        $pointersISBN = $this->selectISBNs($this->seperatedKeywords);
+        $pointersBarcode = $this->selectBarcode($this->seperatedKeywords);
+        $pointersMarcNo = $this->selectMarcNo($this->seperatedKeywords);
+
+        if (empty($pointersCallNo) && empty($pointersISBN) && empty($pointersBarcode) && empty($pointersMarcNo))
+        {
+            $fields = [
+                'titles.value^10',
+                'authors.author^5',
+                'presses.press^3',
+                'subjects.value^2',
+                'notes.value',
+                //'copies.position^1.2',
+                //'copies.status^1.2',
+                //'copies.volume_period^1.2',
+                //'classifications.value.1^5',
+                //'status',
+            ];
+
+            \Yii::info("Search fields: " . implode(", ", $fields));
+
+            return [
+                'multi_match' => [
+                    'query' => $this->keywords,
+                    'type' => 'best_fields',
+                    'fields' => $fields,
+                    'tie_breaker' => 0.3,
+                    'minimum_should_match' => '30%',
+                ]
+            ];
+        }
+        $should = [];
+
+        $unsetKeywords = $this->seperatedKeywords;
+        if (!empty($pointersMarcNo)) {
+            foreach ($pointersMarcNo as $pointer) {
+                $should[] = ['term' => ['marc_no' => $this->seperatedKeywords[$pointer]]];
+                unset($unsetKeywords[$pointer]);
+            }
+        }
+        if (!empty($pointersBarcode)) {
+            foreach ($pointersBarcode as $pointer) {
+                $should[] = ['term' => ['copies.barcode' => $this->seperatedKeywords[$pointer]]];
+                unset($unsetKeywords[$pointer]);
+            }
+        }
+        if (!empty($pointersISBN)) {
+            foreach ($pointersISBN as $pointer) {
+                $should[] = ['term' => ['ISBNs.compressed' => str_replace([' ', '-'], '', trim($this->seperatedKeywords[$pointer]))]];
+                unset($unsetKeywords[$pointer]);
+            }
+        }
+        if (!empty($pointersCallNo)) {
+            foreach ($pointersCallNo as $pointer) {
+                $should[] = ['match' => ['copies.call_no' => $this->seperatedKeywords[$pointer]]];
+                unset($unsetKeywords[$pointer]);
+            }
+        }
+
         $fields = [
             'titles.value^10',
             'authors.author^5',
             'presses.press^3',
-            'marc_no^2',
             'subjects.value^2',
-            //'books.position^1.2',
-            //'books.status^1.2',
-            'copies.barcode^3.8',
-            //'books.volume_period^1.2',
-            //'classes.1^5',
-            'copies.call_no^5',
-            'ISBNs.value^2.8',
-            //'abstract',
-            //'target_readers',
+            //'copies.position^1.2',
+            //'copies.status^1.2',
+            //'copies.volume_period^1.2',
+            //'classifications.value.1^5',
             //'status',
+        ];
+
+        foreach ($unsetKeywords as $keyword)
+        {
+            $should[] = [
+                'term' => [
+                    'titles.value^5' => $keyword
+                ]
+            ];
+            $should[] = [
+                'term' => [
+                    'authors.author^5' => $keyword
+                ]
+            ];
+            $should[] = [
+                'term' => [
+                    'presses.press^3' => $keyword
+                ]
+            ];
+            $should[] = [
+                'term' => [
+                    'subjects.value' => $keyword
+                ]
+            ];
+        }
+
+        return [
+            'bool' => [
+                'should' => $should,
+            ],
         ];
 
         return ([
@@ -115,49 +238,6 @@ class QueryBuilder extends Component
                 'fields' => $fields,
                 'tie_breaker' => 0.3,
                 'minimum_should_match' => '30%',
-            ]
-        ]);
-    }
-
-    /**
-     * 构建检索条件矩阵。
-     * @param string|array $keywords 关键词。若关键词是字符串，将转换为单元素数组。
-     * @param null|array $fields 域键值对。
-     * @return array 检索条件矩阵。
-     */
-    protected function buildQueryArray($keywords, $fields = null, $type = 'best_fields', $tie_breaker = 0.3, $minimum_should_match = '30%')
-    {
-        /**
-         * 若 $fields 为空，将指定默认域和权重。
-         */
-        if (empty($fields)) {
-            $fields = [
-                'titles.value^10',
-                'authors.author^5',
-                'presses.press^3',
-                'marc_no^2',
-                'subjects.value^2',
-                //'books.position^1.2',
-                //'books.status^1.2',
-                'copies.barcode^3.8',
-                //'books.volume_period^1.2',
-                //'classes.1^5',
-                'copies.call_no^5',
-                'ISBNs.value^2.8',
-                //'abstract',
-                //'target_readers',
-                //'status',
-            ];
-        }
-
-        return ([
-            'multi_match' => [
-                'query' => implode(' ', (array)$keywords),
-                'type' => $type,
-                'fields' => $fields,
-                'tie_breaker' => $tie_breaker,
-                'operator' => 'or',
-                'minimum_should_match' => $minimum_should_match,
             ]
         ]);
     }
