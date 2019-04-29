@@ -465,7 +465,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                                 'search_analyzer' => 'ik_smart',
                             ],
                             'key' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                         ],
