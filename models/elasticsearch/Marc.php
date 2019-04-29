@@ -454,7 +454,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             static::type() => [
                 'properties' => [
                     'marc_no' => [
-                        'type' => 'text',
+                        'type' => 'keyword',
                         'fielddata' => true,
                     ],
                     'titles' => [
@@ -462,7 +462,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                             'value' => [
                                 'type' => 'text',
                                 'analyzer' => 'ik_smart',
-                                'search_analyzer' => 'ik_max_word',
+                                'search_analyzer' => 'ik_smart',
                             ],
                             'key' => [
                                 'type' => 'text',
@@ -473,16 +473,14 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     'authors' => [
                         'properties' => [
                             'author' => [
-                                'type' => 'text',
-                                'analyzer' => 'ik_smart',
-                                'search_analyzer' => 'ik_smart',
+                                'type' => 'keyword',
                             ],
                             'duty' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'key' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                         ],
@@ -495,11 +493,11 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                                 'search_analyzer' => 'ik_smart',
                             ],
                             'location' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'date' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                         ],
@@ -507,19 +505,19 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     'ISBNs' => [
                         'properties' => [
                             'key' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'value' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'compressed' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'price' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                         ],
@@ -527,7 +525,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     'forms' => [
                         'properties' => [
                             'form' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                         ],
@@ -535,11 +533,11 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     'subjects' => [
                         'properties' => [
                             'key' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'value' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                         ],
@@ -547,11 +545,11 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     'classifications' => [
                         'properties' => [
                             'key' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'value' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                         ],
@@ -559,21 +557,25 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     'copies' => [
                         'properties' => [
                             'barcode' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'call_no' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'position' =>[
                                 'type' => 'text',
+                                'analyzer' => 'ik_smart',
+                                'search_analyzer' => 'ik_smart',
                             ],
                             'status' => [
                                 'type' => 'text',
+                                'analyzer' => 'ik_smart',
+                                'search_analyzer' => 'ik_smart',
                             ],
                             'volume_period' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                         ],
@@ -581,24 +583,24 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     'notes' => [
                         'properties' => [
                             'key' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'value' => [
                                 'type' => 'text',
                                 'analyzer' => 'ik_smart',
-                                'search_analyzer' => 'ik_max_word',
+                                'search_analyzer' => 'ik_smart',
                             ],
                         ],
                     ],
                     'electronicResources' => [
                         'properties' => [
                             'key' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                             'value' => [
-                                'type' => 'text',
+                                'type' => 'keyword',
                                 'fielddata' => true,
                             ],
                         ]
