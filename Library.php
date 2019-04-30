@@ -28,6 +28,7 @@ abstract class Library extends \rhoone\library\Library
         $queryBuilder = new $this->queryBuilderClass($config);
         /* @var $queryBuilder QueryBuilder */
         $query = $this->marcClass::find()->query($queryBuilder->queryArray)->explain(false)->options($queryBuilder->queryOptions);
+        /* @var $query \rhoone\library\providers\huiwen\models\elasticsearch\MarcQuery */
         $provider = new ActiveDataProvider([
             'query' => $query,
         ]);
