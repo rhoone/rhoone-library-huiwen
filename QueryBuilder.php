@@ -154,7 +154,7 @@ class QueryBuilder extends Component
         if ($expanded) {
             return [
                 $type => [
-                    $field => [
+                    $key => [
                         $value_attribute => $value,
                     ],
                 ],
@@ -162,7 +162,7 @@ class QueryBuilder extends Component
         }
         return [
             $type => [
-                $field => $value,
+                $key => $value,
             ],
         ];
     }
