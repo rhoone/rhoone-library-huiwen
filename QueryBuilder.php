@@ -116,6 +116,273 @@ class QueryBuilder extends Component
         return [];
     }
 
+    /**
+     * @param string $type
+     * @param string $key
+     * @param $value
+     * @param int $boost
+     * @param bool $expanded
+     * @return array
+     */
+    public function buildTermLevelQueryClause(string $type, string $key, $value, $boost = 1, bool $expanded = false)
+    {
+        if ($boost = 1 && !$expanded) {
+            return [$type => [$key => $value]];
+        }
+        return [$type => [$field => [
+            'value' => $value,
+            'boost' => $boost,
+        ]]];
+    }
+
+    /**
+     * @param string $key
+     * @param $value
+     * @param int $boost
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-term-query.html
+     * @see QueryBuilder::buildTermLevelQueryClause()
+     */
+    public function buildTermQueryClause(string $field, $value, $boost = 1)
+    {
+        return $this->buildTermLevelQueryClause('term', $field, $value, $boost);
+    }
+
+    /**
+     * @param string $field
+     * @param array $value
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-terms-query.html
+     */
+    public function buildTermsQueryClause(string $field, array $value)
+    {
+        return [
+            'terms' => [
+                $field => $value,
+            ]
+        ];
+    }
+
+    /**
+     * @param string $field
+     * @param array $value
+     * @param string|null $minimum_should_match_field
+     * @param array|null $minimum_should_match_script
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-terms-set-query.html
+     */
+    public function buildTermsSetQueryClause(string $field, array $value, string $minimum_should_match_field = null, array $minimum_should_match_script = null)
+    {
+        $clause = [
+            'terms_set' => [
+                $field => $value,
+            ],
+        ];
+        if (!empty($minimum_should_match_field))
+        {
+            $clause['terms_set']['minimum_should_match_field'] = $minimum_should_match_field;
+        }
+        if (!empty($minimum_should_match_script))
+        {
+            $clause['terms_set']['minimum_should_match_script'] = $minimum_should_match_script;
+        }
+        return $clause;
+    }
+
+    /**
+     * @param string $field
+     * @param mixed $gte
+     * @param mixed $gt
+     * @param mixed $lte
+     * @param mixed $lt
+     * @param int $boost
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-range-query.html
+     */
+    public function buildRangeQueryClause(string $field, $gte = null, $gt = null, $lte = null, $lt = null, $boost = 1)
+    {
+        $clause = [
+            'range' => [
+                $field => [
+
+                ]
+            ]
+        ];
+        if ($gte != null)
+        {
+            $clause['range'][$field]['gte'] = $gte;
+        }
+        if ($gt != null)
+        {
+            $clause['range'][$field]['gt'] = $gt;
+        }
+        if ($lte != null)
+        {
+            $clause['range'][$field]['lte'] = $lte;
+        }
+        if ($lt != null)
+        {
+            $clause['range'][$field]['lt'] = $lt;
+        }
+        if ($boost != 1)
+        {
+            $clause['range'][$field]['boost'] = $boost;
+        }
+        return $clause;
+    }
+
+    /**
+     * @param string $field
+     * @param mixed $gte
+     * @param mixed $gt
+     * @param mixed $lte
+     * @param mixed $lt
+     * @param int $boost
+     * @param string|null $format
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-range-query.html#_date_format_in_range_queries
+     */
+    public function buildDateRangeQueryClause(string $field, $gte = null, $gt = null, $lte = null, $lt = null, $boost = 1, string $format = null)
+    {
+        $clause = $this->buildRangeQueryClause($field, $gte, $gt, $lte, $lt, $boost);
+        if ($format !== null) {
+            $clause['range'][$field]['format'] = $format;
+        }
+        return $clause;
+    }
+
+    /**
+     * @param string $field
+     * @param mixed $gte
+     * @param mixed $gt
+     * @param mixed $lte
+     * @param mixed $lt
+     * @param int $boost
+     * @param string|null $time_zone
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-range-query.html#_date_format_in_range_queries
+     */
+    public function buildTimeZoneRangeQueryClause(string $field, $gte = null, $gt = null, $lte = null, $lt = null, $boost = 1, string $time_zone = null)
+    {
+        $clause = $this->buildRangeQueryClause($field, $gte, $gt, $lte, $lt, $boost);
+        if ($format !== null) {
+            $clause['range'][$field]['time_zone'] = $time_zone;
+        }
+        return $clause;
+    }
+
+    /**
+     * @param string $field
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-exists-query.html
+     */
+    public function buildExistsQueryClause(string $field)
+    {
+        return [
+            'exists' => [
+                'field' =>$field,
+            ],
+        ];
+    }
+
+    /**
+     * @param string $field
+     * @param $value
+     * @param int $boost
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-prefix-query.html
+     * @see QueryBuilder::buildTermLevelQueryClause()
+     */
+    public function buildPrefixQueryClause(string $field, $value, $boost = 1)
+    {
+        return $this->buildTermLevelQueryClause('prefix', $field, $value, $boost);
+    }
+
+    /**
+     * @param string $field
+     * @param $value
+     * @param int $boost
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-wildcard-query.html
+     * @see QueryBuilder::buildTermLevelQueryClause()
+     */
+    public function buildWildcardQueryClause(string $field, $value, $boost = 1)
+    {
+        return $this->buildTermLevelQueryClause('wildcard', $field, $value, $boost);
+    }
+
+    /**
+     * @param string $field
+     * @param $value
+     * @param int $boost
+     * @param string|null $flags
+     * @param string|null $max_determinized_states
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-regexp-query.html
+     * @see QueryBuilder::buildTermLevelQueryClause()
+     */
+    public function buildRegexpQueryClause(string $field, $value, $boost = 1, string $flags = null, string $max_determinized_states = null)
+    {
+        $clause = $this->buildTermLevelQueryClause('regexp', $field, $value, $boost, true);
+        if ($flags != null)
+        {
+            $clause['regexp'][$field]['flags'] = $flags;
+        }
+        if ($max_determinized_states != null)
+        {
+            $clause['regexp'][$field]['max_determinized_states'] = $max_determinized_states;
+        }
+        return $clause;
+    }
+
+    /**
+     * @param string $field
+     * @param $value
+     * @param int $boost
+     * @param int|null $prefix_length
+     * @param int|null $max_expansions
+     * @param bool|null $transpositions
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-fuzzy-query.html
+     * @see QueryBuilder::buildTermLevelQueryClause()
+     */
+    public function buildFuzzyQueryClause(string $field, $value, $boost = 1, int $prefix_length = null, int $max_expansions = null, bool $transpositions = null)
+    {
+        $clause = $this->buildTermLevelQueryClause('fuzzy', $field, $value, $boost, true);
+        if ($prefix_length != null) {
+            $clause['fuzzy'][$field]['prefix_length'] = $prefix_length;
+        }
+        if ($max_expansions != null) {
+            $clause['fuzzy'][$field]['max_expansions'] = $max_expansions;
+        }
+        if ($transpositions != null) {
+            $clause['fuzzy'][$field]['transpositions'] = $transpositions;
+        }
+        return $clause;
+    }
+
+    /**
+     * @return array
+     * @deprecated This function has been deprecated since ElasticSearch 7.0 released.
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-type-query.html
+     * @see QueryBuilder::buildTermLevelQueryClause()
+     */
+    public function buildTypeQueryClause()
+    {
+        return $this->buildTermLevelQueryClause('type', 'value', '_doc');
+    }
+
+    /**
+     * @param array $values
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-ids-query.html
+     * @see QueryBuilder::buildTermLevelQueryClause()
+     */
+    public function buildIdsQueryClause(array $values)
+    {
+        return $this->buildTermLevelQueryClause('ids', 'values', $values);
+    }
+
     public function getQueryOptions()
     {
         return ([
@@ -137,7 +404,7 @@ class QueryBuilder extends Component
         if (empty($pointersCallNo) && empty($pointersISBN) && empty($pointersBarcode) && empty($pointersMarcNo))
         {
             $fields = [
-                'titles.value^10',
+                'titles.value^5',
                 'authors.author^5',
                 'presses.press^3',
                 'subjects.value^2',
@@ -153,8 +420,7 @@ class QueryBuilder extends Component
 
             return [
                 'multi_match' => [
-                    'query' => $this->keywords,
-                    'type' => 'best_fields',
+                    'query' => $this->seperatedKeywords,
                     'fields' => $fields,
                     'tie_breaker' => 0.3,
                     'minimum_should_match' => '30%',
