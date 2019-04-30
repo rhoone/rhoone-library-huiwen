@@ -65,24 +65,7 @@ class QueryBuilder extends Component
     /**
      * @param array $keywords
      * @return array
-     */
-    protected function selectBarcode(array $keywords)
-    {
-        return [];
-    }
-
-    /**
-     * @param array $keywords
-     * @return array
-     */
-    protected function selectMarcNo(array $keywords)
-    {
-        return [];
-    }
-
-    /**
-     * @param array $keywords
-     * @return array
+     * @deprecated 
      */
     protected function selectISBNs(array $keywords)
     {
@@ -105,15 +88,6 @@ class QueryBuilder extends Component
         }
         \Yii::info("ISBN Pointers in Keyword Array: " . implode(", ", $pointers));
         return $pointers;
-    }
-
-    /**
-     * @param array $keywords
-     * @return array
-     */
-    protected function selectCallNo(array $keywords)
-    {
-        return [];
     }
 
     /**
@@ -273,9 +247,9 @@ class QueryBuilder extends Component
         }
         if ($other != null && is_array($other))
         {
-            foreach ($other as $o)
+            foreach ($other as $k => $v)
             {
-                $clause['function_score'][] = $o;
+                $clause['function_score'][$k] = $v;
             }
         }
     }
@@ -311,9 +285,9 @@ class QueryBuilder extends Component
         $clause = $this->buildQueryClause('match', $field, 'query', $value, true);
         if ($other != null && is_array($other))
         {
-            foreach ($other as $o)
+            foreach ($other as $k => $v)
             {
-                $clause['match'][$field][] = $o;
+                $clause['match'][$field][$k] = $v;
             }
         }
         return $clause;
@@ -332,9 +306,9 @@ class QueryBuilder extends Component
         $clause = $this->buildQueryClause('match_phrase', $field, 'query', $value, true);
         if ($other != null && is_array($other))
         {
-            foreach ($other as $o)
+            foreach ($other as $k => $v)
             {
-                $clause['match_phrase'][$field][] = $o;
+                $clause['match_phrase'][$field][$k] = $v;
             }
         }
         return $clause;
@@ -353,9 +327,9 @@ class QueryBuilder extends Component
         $clause = $this->buildQueryClause('match_phrase_prefix', $field, 'query', $value, true);
         if ($other != null && is_array($other))
         {
-            foreach ($other as $o)
+            foreach ($other as $k => $v)
             {
-                $clause['match_phrase_prefix'][$field][] = $o;
+                $clause['match_phrase_prefix'][$field][$k] = $v;
             }
         }
         return $clause;
@@ -390,9 +364,9 @@ class QueryBuilder extends Component
         }
         if ($other != null && is_array($other))
         {
-            foreach ($other as $o)
+            foreach ($other as $k => $v)
             {
-                $clause['multi_match'][$field][] = $o;
+                $clause['multi_match'][$field][$k] = $v;
             }
         }
         return $clause;
@@ -676,117 +650,12 @@ class QueryBuilder extends Component
         ]);
     }
 
+    /**
+     * @return array
+     * @deprecated
+     */
     public function getQueryArray()
     {
-        $pointersCallNo = $this->selectCallNo($this->seperatedKeywords);
-        $pointersISBN = $this->selectISBNs($this->seperatedKeywords);
-        $pointersBarcode = $this->selectBarcode($this->seperatedKeywords);
-        $pointersMarcNo = $this->selectMarcNo($this->seperatedKeywords);
-
-        if (empty($pointersCallNo) && empty($pointersISBN) && empty($pointersBarcode) && empty($pointersMarcNo))
-        {
-            $fields = [
-                'titles.value^5',
-                'authors.author^5',
-                'presses.press^3',
-                'subjects.value^2',
-                'notes.value',
-                //'copies.position^1.2',
-                //'copies.status^1.2',
-                //'copies.volume_period^1.2',
-                //'classifications.value.1^5',
-                //'status',
-            ];
-
-            \Yii::info("Search fields: " . implode(", ", $fields));
-
-            return [
-                'multi_match' => [
-                    'query' => $this->seperatedKeywords,
-                    'fields' => $fields,
-                    'tie_breaker' => 0.3,
-                    'minimum_should_match' => '30%',
-                ]
-            ];
-        }
-        $should = [];
-
-        $unsetKeywords = $this->seperatedKeywords;
-        if (!empty($pointersMarcNo)) {
-            foreach ($pointersMarcNo as $pointer) {
-                $should[] = ['term' => ['marc_no' => $this->seperatedKeywords[$pointer]]];
-                unset($unsetKeywords[$pointer]);
-            }
-        }
-        if (!empty($pointersBarcode)) {
-            foreach ($pointersBarcode as $pointer) {
-                $should[] = ['term' => ['copies.barcode' => $this->seperatedKeywords[$pointer]]];
-                unset($unsetKeywords[$pointer]);
-            }
-        }
-        if (!empty($pointersISBN)) {
-            foreach ($pointersISBN as $pointer) {
-                $should[] = ['term' => ['ISBNs.compressed' => str_replace([' ', '-'], '', trim($this->seperatedKeywords[$pointer]))]];
-                unset($unsetKeywords[$pointer]);
-            }
-        }
-        if (!empty($pointersCallNo)) {
-            foreach ($pointersCallNo as $pointer) {
-                $should[] = ['match' => ['copies.call_no' => $this->seperatedKeywords[$pointer]]];
-                unset($unsetKeywords[$pointer]);
-            }
-        }
-
-        $fields = [
-            'titles.value^10',
-            'authors.author^5',
-            'presses.press^3',
-            'subjects.value^2',
-            //'copies.position^1.2',
-            //'copies.status^1.2',
-            //'copies.volume_period^1.2',
-            //'classifications.value.1^5',
-            //'status',
-        ];
-
-        foreach ($unsetKeywords as $keyword)
-        {
-            $should[] = [
-                'term' => [
-                    'titles.value^5' => $keyword
-                ]
-            ];
-            $should[] = [
-                'term' => [
-                    'authors.author^5' => $keyword
-                ]
-            ];
-            $should[] = [
-                'term' => [
-                    'presses.press^3' => $keyword
-                ]
-            ];
-            $should[] = [
-                'term' => [
-                    'subjects.value' => $keyword
-                ]
-            ];
-        }
-
-        return [
-            'bool' => [
-                'should' => $should,
-            ],
-        ];
-
-        return ([
-            'multi_match' => [
-                'query' => $this->keywords,
-                'type' => 'best_fields',
-                'fields' => $fields,
-                'tie_breaker' => 0.3,
-                'minimum_should_match' => '30%',
-            ]
-        ]);
+        return ([]);
     }
 }
