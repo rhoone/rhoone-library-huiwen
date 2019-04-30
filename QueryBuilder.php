@@ -117,10 +117,274 @@ class QueryBuilder extends Component
     }
 
     /**
+     * @param int $boost
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-match-all-query.html
+     */
+    public function buildMatchAllQueryClause($boost = 1)
+    {
+        if ($boost != null && $boost != 1)
+        {
+            return [
+                'match_all' => ['boost' => $boost],
+            ];
+        }
+        return ['match_all' => []];
+    }
+
+    /**
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-match-all-query.html
+     */
+    public function buildMatchNoneQueryClause()
+    {
+        return ['match_none' => []];
+    }
+
+    /**
      * @param string $type
      * @param string $key
-     * @param $value
+     * @param string $value_attribute
+     * @param mixed $value
+     * @param bool $expanded
+     * @return array
+     */
+    public function buildQueryClause(string $type, string $key, string $value_attribute, $value, $expanded = false)
+    {
+        if ($expanded) {
+            return [
+                $type => [
+                    $field => [
+                        $value_attribute => $value,
+                    ],
+                ],
+            ];
+        }
+        return [
+            $type => [
+                $field => $value,
+            ],
+        ];
+    }
+
+    /**
+     * @param array $filters
      * @param int $boost
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-constant-score-query.html
+     */
+    public function buildConstantScoreQuery(array $filters, $boost = 1)
+    {
+        return [
+            'constant_score' => [
+                'filter' => $filters,
+                'boost' => $boost,
+            ]
+        ];
+    }
+
+    /**
+     * @param array|null $musts
+     * @param array|null $filters
+     * @param array|null $must_nots
+     * @param array|null $shoulds
+     * @param int $boost
+     * @param string|null $minimum_should_match
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-bool-query.html
+     */
+    public function buildBoolQuery(array $musts = null, array $filters = null, array $must_nots = null, array $shoulds = null, $boost = 1, string $minimum_should_match = null)
+    {
+        $clause = [
+            'bool' => [
+            ]
+        ];
+        if ($musts != null) {
+            $clause['bool']['must'] = $musts;
+        }
+        if ($filters != null) {
+            $clause['bool']['filter'] = $filters;
+        }
+        if ($must_nots != null) {
+            $clause['bool']['must_not'] = $must_nots;
+        }
+        if ($shoulds != null) {
+            $clause['bool']['should'] = $shoulds;
+        }
+        if ($boost != null && $boost != 1) {
+            $clause['bool']['boost'] = $boost;
+        }
+        if ($minimum_should_match != null) {
+            $clause['bool']['minimum_should_match'] = $minimum_should_match;
+        }
+        return $clause;
+    }
+
+    /**
+     * @param array $queries
+     * @param int $boost
+     * @param double|null $tie_breaker
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-dis-max-query.html
+     */
+    public function buildDisMaxQuery(array $queries, $boost = 1, double $tie_breaker = null)
+    {
+        $clause = [
+            'dis_max' => [
+                'queries' => $queries,
+            ],
+        ];
+        if ($boost != null && $boost != 1)
+        {
+            $clause['dis_max']['boost'] = $boost;
+        }
+        if ($tie_breaker != null)
+        {
+            $clause['dis_max']['tie_breaker'] = $tie_breaker;
+        }
+        return $clause;
+    }
+
+    /**
+     * @param $query
+     * @param array $functions
+     * @param int $boost
+     * @param array $other
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-function-score-query.html
+     * @todo weight
+     * @todo random
+     * @todo field value factor
+     * @todo decay functions
+     */
+    public function buildFunctionScoreQuery($query, array $functions, $boost = 1, array $other)
+    {
+        $clause = [
+            'function_score' => [
+                'query' => $query,
+            ],
+        ];
+        if ($functions != null)
+        {
+            $clause['function_score']['functions'] = $functions;
+        }
+        if ($boost != null && $boost != 1)
+        {
+            $clause['function_score']['boost'] = $boost;
+        }
+        if ($other != null && is_array($other))
+        {
+            foreach ($other as $o)
+            {
+                $clause['function_score'][] = $o;
+            }
+        }
+    }
+
+    /**
+     * @param string $field
+     * @param mixed $value
+     * @param array $other
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-match-query.html
+     * @see QueryBuilder::buildQueryClause()
+     */
+    public function buildMatchClause(string $field, $value, array $other = null)
+    {
+        $clause = $this->buildQueryClause('match', $field, 'query', $value, true);
+        if ($other != null && is_array($other))
+        {
+            foreach ($other as $o)
+            {
+                $clause['match'][$field][] = $o;
+            }
+        }
+        return $clause;
+    }
+
+    /**
+     * @param string $field
+     * @param mixed $value
+     * @param array|null $other
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-match-query-phrase.html
+     * @see QueryBuilder::buildQueryClause()
+     */
+    public function buildMatchPhraseClause(string $field, $value, array $other = null)
+    {
+        $clause = $this->buildQueryClause('match_phrase', $field, 'query', $value, true);
+        if ($other != null && is_array($other))
+        {
+            foreach ($other as $o)
+            {
+                $clause['match_phrase'][$field][] = $o;
+            }
+        }
+        return $clause;
+    }
+
+    /**
+     * @param string $field
+     * @param mixed $value
+     * @param array|null $other
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-match-query-phrase-prefix.html
+     * @see QueryBuilder::buildQueryClause()
+     */
+    public function buildMatchPhrasePrefixClause(string $field, $value, array $other = null)
+    {
+        $clause = $this->buildQueryClause('match_phrase_prefix', $field, 'query', $value, true);
+        if ($other != null && is_array($other))
+        {
+            foreach ($other as $o)
+            {
+                $clause['match_phrase_prefix'][$field][] = $o;
+            }
+        }
+        return $clause;
+    }
+
+    /**
+     * @param mixed $value
+     * @param array $fields
+     * @param string|null $type
+     * @param double|null $tie_breaker
+     * @param string|null $operator
+     * @param string|null $minimum_should_match
+     * @param array|null $other
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-multi-match-query.html
+     * @see QueryBuilder::buildQueryClause()
+     */
+    public function buildMultiMatchClause($value, array $fields, string $type = null, double $tie_breaker = null, string $operator = null, string $minimum_should_match = null, array $other = null)
+    {
+        $clause = $this->buildQueryClause('multi_match', $field, 'query', $value, true);
+        if ($tie_breaker != null)
+        {
+            $clause['multi_match'][$field]['tie_breaker'] = $tie_breaker;
+        }
+        if ($operator != null)
+        {
+            $clause['multi_match'][$field]['operator'] = $operator;
+        }
+        if ($minimum_should_match != null)
+        {
+            $clause['multi_match'][$field]['minimum_should_match'] = $minimum_should_match;
+        }
+        if ($other != null && is_array($other))
+        {
+            foreach ($other as $o)
+            {
+                $clause['multi_match'][$field][] = $o;
+            }
+        }
+        return $clause;
+    }
+
+    /**
+     * @param string $type
+     * @param string $key
+     * @param mixed $value
+     * @param int|float $boost
      * @param bool $expanded
      * @return array
      */
@@ -137,8 +401,8 @@ class QueryBuilder extends Component
 
     /**
      * @param string $key
-     * @param $value
-     * @param int $boost
+     * @param mixed $value
+     * @param int|float $boost
      * @return array
      * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-term-query.html
      * @see QueryBuilder::buildTermLevelQueryClause()
@@ -195,7 +459,7 @@ class QueryBuilder extends Component
      * @param mixed $gt
      * @param mixed $lte
      * @param mixed $lt
-     * @param int $boost
+     * @param int|float $boost
      * @return array
      * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-range-query.html
      */
@@ -237,7 +501,7 @@ class QueryBuilder extends Component
      * @param mixed $gt
      * @param mixed $lte
      * @param mixed $lt
-     * @param int $boost
+     * @param int|float $boost
      * @param string|null $format
      * @return array
      * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-range-query.html#_date_format_in_range_queries
@@ -257,7 +521,7 @@ class QueryBuilder extends Component
      * @param mixed $gt
      * @param mixed $lte
      * @param mixed $lt
-     * @param int $boost
+     * @param int|float $boost
      * @param string|null $time_zone
      * @return array
      * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-range-query.html#_date_format_in_range_queries
@@ -287,8 +551,8 @@ class QueryBuilder extends Component
 
     /**
      * @param string $field
-     * @param $value
-     * @param int $boost
+     * @param mixed $value
+     * @param int|float $boost
      * @return array
      * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-prefix-query.html
      * @see QueryBuilder::buildTermLevelQueryClause()
@@ -300,8 +564,8 @@ class QueryBuilder extends Component
 
     /**
      * @param string $field
-     * @param $value
-     * @param int $boost
+     * @param mixed $value
+     * @param int|float $boost
      * @return array
      * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-wildcard-query.html
      * @see QueryBuilder::buildTermLevelQueryClause()
@@ -313,8 +577,8 @@ class QueryBuilder extends Component
 
     /**
      * @param string $field
-     * @param $value
-     * @param int $boost
+     * @param mixed $value
+     * @param int|float $boost
      * @param string|null $flags
      * @param string|null $max_determinized_states
      * @return array
@@ -337,8 +601,8 @@ class QueryBuilder extends Component
 
     /**
      * @param string $field
-     * @param $value
-     * @param int $boost
+     * @param mixed $value
+     * @param int|float $boost
      * @param int|null $prefix_length
      * @param int|null $max_expansions
      * @param bool|null $transpositions
