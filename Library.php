@@ -17,7 +17,7 @@ use yii\elasticsearch\ActiveDataProvider;
  * Class Library
  * @package rhoone\library\providers\huiwen
  */
-abstract class Library extends \rhoone\library\Library
+abstract class Library extends \rhoone\library\Library implements ILibraryQueryOperation
 {
     public $marcClass = \rhoone\library\providers\huiwen\models\elasticsearch\Marc::class;
 
