@@ -30,4 +30,10 @@ interface ILibraryQueryOperation
     public function queryTitle(string $keyword, array $config = null);
 
     public function queryAuthor(string $keyword, array $config = null);
+
+    public function queryPress(string $keyword, array $config = null);
+
+    public function querySubject(string $keyword, array $config = null);
+
+    public function queryNote(string $keyword, array $config = null);
 }
