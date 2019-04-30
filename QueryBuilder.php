@@ -281,6 +281,24 @@ class QueryBuilder extends Component
     }
 
     /**
+     * @param array $positive
+     * @param array $negative
+     * @param $negative_boost
+     * @return array
+     * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.0/query-dsl-boosting-query.html
+     */
+    public function buildBoostingQuery(array $positive, array $negative, $negative_boost)
+    {
+        return [
+            'boosting' => [
+                'positive' => $positive,
+                'negative' => $negative,
+                'negative_boost' => $negative_boost,
+            ]
+        ];
+    }
+
+    /**
      * @param string $field
      * @param mixed $value
      * @param array $other
