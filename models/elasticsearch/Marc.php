@@ -471,7 +471,9 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     'authors' => [
                         'properties' => [
                             'author' => [
-                                'type' => 'keyword',
+                                'type' => 'text',
+                                'analyzer' => 'ik_smart',
+                                'search_analyzer' => 'ik_smart',
                             ],
                             'duty' => [
                                 'type' => 'keyword',
@@ -489,7 +491,9 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                                 'search_analyzer' => 'ik_smart',
                             ],
                             'location' => [
-                                'type' => 'keyword',
+                                'type' => 'text',
+                                'analyzer' => 'ik_smart',
+                                'search_analyzer' => 'ik_smart',
                             ],
                             'date' => [
                                 'type' => 'keyword',
@@ -515,7 +519,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
                     'forms' => [
                         'properties' => [
                             'form' => [
-                                'type' => 'keyword',
+                                'type' => 'text',
                             ],
                         ],
                     ],
