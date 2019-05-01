@@ -21,6 +21,7 @@ use yii\base\Component;
  * @property-read array $queryOptions
  * @property string $keywords
  * @property string[] $seperatedKeywords
+ * @property-read string[] $seperatedWords
  *
  * @package rhoone\library\providers\huiwen\targets\tongjiuniversity
  */
@@ -51,6 +52,31 @@ class QueryBuilder extends Component
     public function getSeperatedKeywords(string $delimiter = ' ')
     {
         return explode($delimiter, $this->keywords);
+    }
+
+    /**
+     * @param string $delimiter
+     * @return array
+     */
+    public function getSeperatedWords(string $delimiter = ' ')
+    {
+        $seperated = $this->getSeperatedKeywords($delimiter);
+        $first_key = key($seperated);
+        $prev_key = $first_key;
+        foreach ($seperated as $key => $keyword)
+        {
+            $regexp = "/^([-ÿa-zA-Z0-9 \+\(\)\*\.\[\]\?\\\^\{\}\|&#@!])+$/";
+            if ($first_key != $key)
+            {
+                if (preg_match($regexp, $seperated[$prev_key]) && preg_match($regexp, $keyword))
+                {
+                    $seperated[$key] = $seperated[$prev_key] . ' ' . $keyword;
+                    unset($seperated[$prev_key]);
+                }
+                $prev_key = $key;
+            }
+        }
+        return $seperated;
     }
 
     /**

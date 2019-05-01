@@ -28,7 +28,8 @@ abstract class Library extends \rhoone\library\Library implements ILibraryQueryO
         $queryBuilder = new $this->queryBuilderClass($config);
         /* @var $queryBuilder QueryBuilder */
         /* @var $query \rhoone\library\providers\huiwen\models\elasticsearch\MarcQuery */
-        $query = $this->marcClass::find()->query($this->buildQueryArray($queryBuilder->seperatedKeywords, $queryBuilder))->explain(true);
+        $query = $this->marcClass::find()->query($this->buildQueryArray($queryBuilder->seperatedWords, $queryBuilder))->explain(true);
+        \Yii::info("Seperated Words: " . implode(", ", $queryBuilder->seperatedWords));
         $provider = new ActiveDataProvider([
             'query' => $query,
         ]);
