@@ -65,7 +65,7 @@ class QueryBuilder extends Component
     /**
      * @param array $keywords
      * @return array
-     * @deprecated 
+     * @deprecated
      */
     protected function selectISBNs(array $keywords)
     {

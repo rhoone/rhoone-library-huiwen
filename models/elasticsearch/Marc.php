@@ -150,7 +150,8 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             '修订', '汇编', '编印', '前辑', '收集', '选注', '配画', '标校', '譯', '纂修', '編纂', '點校', '革', '集錄',
             '注', '編', '注釋', '選注', '翻譯', '編次', '譯注', '校訂', '編輯', '绘', '編製', '绘画', '集校', '輯校',
             '撰书', '編校整理', '標校整理', '輯本', '纂注', '錄', '主編', '編審', '订', '搜輯', '撰述', '校阅', '纂述',
-            '述', '出品人', '制片人', '摄制', '导演', '出品', '制作', '录制', '制片', '解说', '主办'];
+            '述', '出品人', '制片人', '摄制', '导演', '出品', '制作', '录制', '制片', '解说', '主办', '审定', '选释',
+            '译注', '编辑', '翻译', '选译', '译校', '主讲', '创作', '作者', '编剧', '指导', '授予'];
         if (empty($this->authors)) {
             $this->authors = [];
         }
@@ -163,7 +164,7 @@ class Marc extends \yii\elasticsearch\ActiveRecord
             {
                 $index[$offset]['key'] = $key;
                 $exploded = explode(' ', $result);
-                if (in_array(trim(end($exploded)), $dutyList)) {
+                if (in_array(trim(end($exploded)), $dutyList) || count($exploded) > 1) {
                     $index[$offset]['author'] = implode(' ', explode(' ', $result, -1));
                     $index[$offset]['duty'] = trim(end($exploded));
                 } else {
