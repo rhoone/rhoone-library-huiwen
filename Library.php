@@ -137,7 +137,9 @@ abstract class Library extends \rhoone\library\Library implements ILibraryQueryO
         }
 
         $should = array_merge($should, $titles, $authors, $presses, $subjects, $notes);
-        if (!empty($should)) {
+        if (empty($should)) {
+            $queryArray = ['match_none' => (Object)array()];
+        } else {
             $queryArray['bool']['should'] = $should;
         }
         return $queryArray;
