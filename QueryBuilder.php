@@ -13,6 +13,7 @@
  */
 namespace rhoone\library\providers\huiwen;
 
+use phpDocumentor\Reflection\Types\Object_;
 use yii\base\Component;
 
 /**
@@ -665,16 +666,66 @@ class QueryBuilder extends Component
         return $this->buildTermLevelQueryClause('ids', 'values', $values);
     }
 
+    public function getHighlight()
+    {
+        return [
+            'fields' => [
+                'titles.value' => (Object)[],
+                'authors.author' => (Object)[],
+                'presses.press' => (Object)[],
+                'subjects.value' => (Object)[],
+                'notes.value' => (Object)[],
+                'copies.call_no' => (Object)[],
+                'ISBNs.value' => (Object)[],
+                'copies.barcode' => (Object)[],
+                'marc_no' => (Object)[],
+            ],
+        ];
+    }
+
+    /**
+     * @return array
+     */
     public function getQueryOptions()
     {
+        $pre_tags = ["<em>"];
+        $post_tags = ["</em>"];
         return ([
             'highlight' => [
                 'fields' => [
-                    'titles.title' => [],
+                    'titles.value' => (Object)[],
+                    'authors.author' => (Object)[],
+                    'presses.press' => (Object)[],
+                    'subjects.value' => (Object)[],
+                    'notes.value' => (Object)[],
+                    'copies.call_no' => (Object)[],
+                    'ISBNs.value' => (Object)[],
+                    'copies.barcode' => (Object)[],
+                    'marc_no' => (Object)[],
                 ],
             ],
         ]);
-    }
+    }/*
+    public function getQueryOptions()
+    {
+        $pre_tags = ["<em>"];
+        $post_tags = ["</em>"];
+        return ([
+            'highlight' => [
+                'fields' => [
+                    'titles.value' => ["pre_tags" => $pre_tags, "post_tags" => $post_tags],
+                    'authors.author' => ["pre_tags" => $pre_tags, "post_tags" => $post_tags],
+                    'presses.press' => ["pre_tags" => $pre_tags, "post_tags" => $post_tags],
+                    'subjects.value' => ["pre_tags" => $pre_tags, "post_tags" => $post_tags],
+                    'notes.value' => ["pre_tags" => $pre_tags, "post_tags" => $post_tags],
+                    'copies.call_no' => ["pre_tags" => $pre_tags, "post_tags" => $post_tags],
+                    'ISBNs.value' => ["pre_tags" => $pre_tags, "post_tags" => $post_tags],
+                    'copies.barcode' => ["pre_tags" => $pre_tags, "post_tags" => $post_tags],
+                    'marc_no' => ["pre_tags" => $pre_tags, "post_tags" => $post_tags],
+                ],
+            ],
+        ]);
+    }*/
 
     /**
      * @return array
