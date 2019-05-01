@@ -86,7 +86,7 @@ abstract class Library extends \rhoone\library\Library implements ILibraryQueryO
             if ($this->queryTitle($keyword)->exists())
             {
                 $titles[] = $queryBuilder->buildMatchPhraseClause('titles.value', $keyword, ['boost' => 5]);
-                \Yii::info("Keyword: `$keyword`, title matched.");
+                \Yii::info("Keyword: `$keyword`, title phrase matched.");
             }
 
             if ($this->queryAuthor($keyword)->exists())
@@ -137,7 +137,7 @@ abstract class Library extends \rhoone\library\Library implements ILibraryQueryO
         }
 
         $should = array_merge($should, $titles, $authors, $presses, $subjects, $notes);
-        if (empty($should)) {
+        if (empty($should) && empty($filter)) {
             $queryArray = ['match_none' => (Object)array()];
         } else {
             $queryArray['bool']['should'] = $should;
