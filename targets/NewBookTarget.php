@@ -50,4 +50,26 @@ abstract class NewBookTarget extends \rhoone\library\targets\NewBookTarget
         "X" => "环境科学,安全科学",
         "Z" => "综合性图书",
     ];
+
+    public $backDays = 1;
+
+    /**
+     * @return array
+     */
+    public function getAbsoluteUrls()
+    {
+        $urls = [];
+        foreach ($this->categories as $key => $category)
+        {
+            $urls[$key] = $this->getAbsoluteUrl([
+                'type' => 'cls',
+                's_doctype' => 'ALL',
+                'back_days' => $this->backDays,
+                'cls' => $key,
+                'loca_code' => 'ALL',
+                'clsname' => $category
+            ]);
+        }
+        return $urls;
+    }
 }
