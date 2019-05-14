@@ -19,8 +19,19 @@ use yii\web\AssetBundle;
  */
 class SearchResultsAsset extends AssetBundle
 {
+    /**
+     * @var string
+     */
     public $sourcePath = "@rhoone/library/providers/huiwen/widgets/assets/search-results-assets";
 
+    /**
+     * @var string
+     */
+    public $bookImgPath = "/img/book.jpg";
+
+    /**
+     * @var array
+     */
     public $depends = [
         'yii\web\YiiAsset',
         'yii\bootstrap\BootstrapAsset',
