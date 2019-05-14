@@ -86,7 +86,7 @@ abstract class Library extends \rhoone\library\Library implements ILibraryQueryO
 
             if ($this->queryTitle($keyword)->exists())
             {
-                $titles[] = $queryBuilder->buildMatchPhraseClause('titles.value', $keyword, ['boost' => 5]);
+                $titles[] = $queryBuilder->buildMatchPhraseClause('titles.value', $keyword, ['boost' => 6]);
                 \Yii::info("Keyword: `$keyword`, title phrase matched.");
             }
 
