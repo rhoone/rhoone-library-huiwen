@@ -101,13 +101,20 @@ abstract class Library extends \rhoone\library\Library implements ILibraryQueryO
                 $presses[] = $queryBuilder->buildMatchPhraseClause('presses.press', $keyword, ['boost' => 3]);
                 \Yii::info("Keyword: `$keyword`, press matched.");
             }
+
+            if ($this->querySubject($keyword)->exists())
+            {
+                $subjects[] = $queryBuilder->buildMatchClause('subjects.value', $keyword);
+                \Yii::info("Keyword: `$keyword`, subject matched.");
+            }
         }
         if (!empty($callNos['bool']['should'])) {
             $filter[] = $callNos;
         }
+        /*
         if (!empty($ISBNs['bool']['should'])) {
             $filter[] = $ISBNs;
-        }
+        }*/
         if (!empty($barcodes['bool']['should'])) {
             $filter[] = $barcodes;
         }
@@ -118,11 +125,12 @@ abstract class Library extends \rhoone\library\Library implements ILibraryQueryO
             $queryArray['bool']['filter'][] = $filter;
         }
 
-        if (empty($titles) && empty($authors) && empty($presses)) {
+        if (empty($titles) && empty($authors) && empty($presses) && empty($subjects)) {
+            \Yii::info("Keyword: `$keyword`, failed to match title, author, press and subject." );
             foreach ($keywords as $keyword) {
                 if ($this->querySubject($keyword)->exists())
                 {
-                    $subjects[] = $queryBuilder->buildTermQueryClause('subjects.value', $keyword);
+                    $subjects[] = $queryBuilder->buildWildcardQueryClause('subjects.value', $keyword);
                     \Yii::info("Keyword: `$keyword`, subject matched.");
                 }
             }
@@ -137,7 +145,7 @@ abstract class Library extends \rhoone\library\Library implements ILibraryQueryO
             }
         }
 
-        $should = array_merge($should, $titles, $authors, $presses, $subjects, $notes);
+        $should = array_merge($should, $titles, $authors, $presses, $subjects, $notes, $ISBNs['bool']['should']);
         if (empty($should) && empty($filter)) {
             $queryArray = ['match_none' => (Object)array()];
         } else {
