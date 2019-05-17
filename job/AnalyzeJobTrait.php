@@ -244,8 +244,8 @@ trait AnalyzeJobTrait
             return $marcNo->save();
         }
 
-        if ($this->isEmptyMarc($marcResults)) {
-            $marcNo->empty = true;
+        $marcNo->empty = $this->isEmptyMarc($marcResults);
+        if ($marcNo->empty) {
             return $marcNo->save();
         }
 
