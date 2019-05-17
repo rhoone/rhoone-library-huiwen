@@ -14,6 +14,7 @@ namespace rhoone\library\providers\huiwen\job;
 
 use rhoone\library\providers\huiwen\models\elasticsearch\Marc;
 use rhoone\library\providers\huiwen\models\mongodb\MarcNo;
+use yii\base\ErrorException;
 
 /**
  * Trait IndexJobTrait
@@ -52,7 +53,11 @@ trait IndexJobTrait
         $index->copyAttributes = $model->marcCopies;
         $index->infoAttributes = $model->marcInfos;
         $index->statusAttributes = $model->marcStatus;
-        return $index->save();
+        if (!$index->save()) {
+            $errors = $index->getErrors();
+            throw new ErrorException(first($errors));
+        }
+        return true;
     }
 
     /**
@@ -70,7 +75,14 @@ trait IndexJobTrait
             printf("progress: [%-50s] %d%% Done.\r", str_repeat('#', $count / count($this->marcNos) * 50), $count / count($this->marcNos) * 100);
             $this->_currentMarcNo = $marcNo;
             $model = $class::find()->marcNo($this->_currentMarcNo)->one();
-            $this->index($model);
+            /* @var $model \rhoone\library\providers\huiwen\models\mongodb\MarcNo */
+            try {
+                $result = $this->index($model);
+            } catch (\Exception $ex) {
+                $model->error_indexing = true;
+                $model->reason_indexing = $ex->getMessage();
+                $model->save();
+            }
         }
         file_put_contents("php://stdout", "\n");
         file_put_contents("php://stdout", count($this->marcNos) . " tasks finished.\n");
